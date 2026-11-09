@@ -1,0 +1,32 @@
+# /etc/systemd/system/gym-pulse.service
+#   sudo systemctl daemon-reload && sudo systemctl enable --now gym-pulse
+#   journalctl -u gym-pulse -f
+#
+# 部署前置：
+#   sudo apt install -y ffmpeg python3-venv fonts-noto-cjk
+#   sudo useradd -r -m -d /opt/gym-media-studio gympulse
+#   cd /opt/gym-media-studio && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#   把项目文件拷入 /opt/gym-media-studio，chown -R gympulse:gympulse /opt/gym-media-studio
+
+[Unit]
+Description=凌扬运动 LYNVOS FIT 自媒体自动化工作台
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gympulse
+Group=gympulse
+WorkingDirectory=/opt/gym-media-studio
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONUTF8=1
+Environment=GYMPULSE_HOST=127.0.0.1
+Environment=GYMPULSE_PORT=8787
+# 推荐改用 data/users.json（权限 600）；密码含 : , = 等特殊字符时不要写在 Environment 里
+Environment=GYMPULSE_USERS=admin:CHANGE_ME_ADMIN:admin,editor:CHANGE_ME_EDITOR
+ExecStart=/opt/gym-media-studio/.venv/bin/python run.py --serve
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

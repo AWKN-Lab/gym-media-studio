@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "凌扬运动工作台",
+  "mainBinaryName": "lynvos-studio",
+  "version": "1.0.0",
+  "identifier": "cn.awkn.lynvos.studio",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "windows": [],
+    "withGlobalTauri": false,
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "LYNVOS FIT",
+    "copyright": "Copyright © 2026 凌扬运动",
+    "category": "Business",
+    "shortDescription": "健身房自媒体自动化工作台",
+    "longDescription": "选题、脚本、配音、剪辑、逐字稿、发布与互动运营的本地一体化工作台。数据只保存在本机用户目录。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../dist/sidecar/": "resources/lynvos/"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "languages": ["SimpChinese"],
+        "startMenuFolder": "凌扬运动"
+      }
+    }
+  }
+}

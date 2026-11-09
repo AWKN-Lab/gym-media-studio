@@ -1,0 +1,150 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>凌扬运动工作台 · 本地可安装界面应用</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}
+body{margin:0;background:#f5f7fa;color:#1b2330;font:14px/1.7 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 22px 60px}
+header{background:#fff;border:1px solid #e3e8ef;border-radius:14px;padding:24px 26px;margin-bottom:18px}
+h1{margin:0 0 6px;font-size:23px}h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:18px 0 8px}
+.sub{color:#667085;font-size:13px}
+.tag{display:inline-block;border-radius:6px;padding:2px 9px;font-size:12px;font-weight:700;color:#fff}
+.tag.good{background:#15803d}.tag.warn{background:#c2410c}.tag.info{background:#1d4ed8}.tag.gray{background:#98a2b3}
+.alert{margin-top:16px;background:#fff5f2;border:1px solid #ffcdbf;border-left:4px solid #e2601a;border-radius:8px;padding:13px 16px;color:#7a3418}
+.alert b{color:#c2410c}
+section{background:#fff;border:1px solid #e3e8ef;border-radius:14px;padding:20px 24px;margin-bottom:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #edf0f4;padding:9px 10px;text-align:left;vertical-align:top}
+th{background:#f8fafc;color:#475467;font-weight:600}
+code{background:#f1f4f8;border-radius:4px;padding:1px 5px;font:12.5px Consolas,Monaco,monospace}
+pre{background:#101828;color:#e6edf7;border-radius:9px;padding:14px 16px;overflow:auto;font:12.5px/1.65 Consolas,Monaco,monospace}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{border:1px solid #e3e8ef;border-radius:11px;padding:15px 16px;background:#fcfdff}
+.card h3{margin:0 0 8px}
+ul{margin:6px 0 0;padding-left:20px}li{margin:4px 0}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 14px;font-size:13.5px}
+.kv dt{color:#667085}.kv dd{margin:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:10px 0 4px;font-size:12.5px}
+.flow span{background:#eef4ff;border:1px solid #d5e2ff;color:#1d4ed8;border-radius:7px;padding:7px 11px;font-weight:600}
+.flow i{font-style:normal;color:#98a2b3}
+.small{font-size:12.5px;color:#667085}
+</style></head><body><div class="wrap">
+
+<header>
+  <h1>凌扬运动 LYNVOS FIT · 本地可安装界面应用</h1>
+  <div class="sub">Tauri 2 桌面壳 + 现有 Python 内核 / 精简完整包 · 2026-11-09</div>
+  <div style="margin-top:12px">
+    <span class="tag info">代码与一键构建链路已完成</span>
+    <span class="tag warn">安装包本轮未产出</span>
+    <span class="tag gray">构建读数未取得</span>
+  </div>
+  <div class="alert"><b>如实标注：</b>本轮 WorkBuddy 宿主 shell 运行时故障（Bash 连 <code>pwd</code> 都报 <code>tsbx_sdk.dll</code> 加载失败，PowerShell 报内部模块缺失，绕过沙箱同样失败；文件读写通道正常）。因此 <b>没有执行 PyInstaller / cargo / tauri build，没有产出 .exe 安装包，也没有跑单测与证伪</b>。下方所有「待验证」项都不是结论。通道恢复后双击 <code>desktop/build.bat</code> 即可继续。</div>
+</header>
+
+<section>
+  <h2>一、选型依据（本机实测条件）</h2>
+  <table><tr><th>项</th><th>读数</th><th>影响</th></tr>
+    <tr><td>Python / Node / Rust</td><td>3.13.14 / 22.22.2 / 1.94.1</td><td>两套壳都能构建</td></tr>
+    <tr><td>Tauri crate 缓存</td><td><code>~/.cargo/registry</code> 约 1 GB，含 tauri 2.10.3 全套</td><td>选 Tauri 不必赌外网拉 crates</td></tr>
+    <tr><td>WebView2 Runtime</td><td>145.0.3800.70 已安装</td><td>安装包无需自带浏览器内核</td></tr>
+    <tr><td>PyInstaller</td><td>6.20.0（挂在 Python 3.14 下，需为 3.13 另装）</td><td>构建脚本自动 pip 安装</td></tr>
+    <tr><td>Inno Setup / NSIS</td><td>未单独安装</td><td>用 Tauri 自带 NSIS 打包器，不引入外部工具</td></tr>
+    <tr><td>项目体积</td><td>891 MB，其中 <b>864 MB 是抖音浏览器 profile / CDP 探针 / 历史成片</b>；代码+界面约 1 MB</td><td>安装包必须走白名单，不能整目录打包</td></tr>
+  </table>
+  <p class="small">用户既有 Tauri 字幕应用经验 → 选 Tauri 2 而非 Electron；界面与全部 API 原样复用 <code>web/index.html</code> + <code>web/server.py</code>，不重写前端。</p>
+</section>
+
+<section>
+  <h2>二、运行结构</h2>
+  <div class="flow">
+    <span>桌面快捷方式</span><i>→</i><span>Tauri 壳 (Rust)</span><i>→</i><span>拉起 sidecar</span><i>→</i>
+    <span>Python 内核 http.server :8787</span><i>→</i><span>WebView2 窗口载入现有界面</span>
+  </div>
+  <dl class="kv" style="margin-top:14px">
+    <dt>程序目录（只读）</dt><dd><code>%LOCALAPPDATA%\Programs\凌扬运动工作台\</code> —— exe、WebView2 壳、<code>resources/lynvos/</code> 内核与静态骨架</dd>
+    <dt>用户数据目录（可写）</dt><dd><code>%LOCALAPPDATA%\LynvosFit\</code> —— config.json、data/、output/、assets/、web/index.html 副本、port.json</dd>
+    <dt>安装权限</dt><dd>NSIS <code>currentUser</code>，免管理员；开始菜单「凌扬运动」，带卸载项</dd>
+    <dt>内核形态</dt><dd>PyInstaller <b>onedir</b>（不是 onefile）：无 bootloader 子进程，退出时进程树能一次杀干净</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>三、四条硬契约（都有门禁钉住）</h2>
+  <div class="grid">
+    <div class="card"><h3><span class="tag info">1</span> 程序只读 + 数据可写</h3>
+      <p><code>core/paths.py</code> 用单一环境变量 <code>LYNVOS_HOME</code> 覆盖 <code>core/util.py</code> 的 <code>ROOT</code>，六个路径常量（config/data/output/assets/web）整体重定向。<b>不设变量时逐字保持开发期行为</b>，既有 78 项任务与所有 A/B 严格回退不受影响。</p>
+      <p class="small">顺手修了 <code>core/playbook.py</code> 自己另算一份 ROOT 的问题，否则安装后用户改的方法库/承诺方案库读不到。</p></div>
+    <div class="card"><h3><span class="tag info">2</span> 白名单引导</h3>
+      <p>首次启动只播种 <code>config.json</code>、<code>web/index.html</code>、<code>assets</code> 程序资源、<code>data/baseline/*.json</code>、<code>assets/gym/*</code>。用户数据仅在缺失时补，程序资源按哈希覆盖（升级不冲掉用户改过的方案）。</p>
+      <p class="small">864 MB 的 <code>data/browser-*</code>、<code>_cdp_probe</code>、<code>_pipe_probe</code>、<code>runs</code> 一律不进包、不复制。</p></div>
+    <div class="card"><h3><span class="tag info">3</span> 关窗不留后台服务</h3>
+      <p>父子双保险：Tauri 在 <code>RunEvent::Exit</code> 与「启动失败/超时」两条路径都 <code>kill + wait</code> 子进程；sidecar 另有 <code>--parent-pid</code> 守护线程，父进程被强杀也会清理 <code>port.json</code> 并 <code>os._exit(0)</code>。</p>
+      <p class="small">这条正是本轮「后台任务是否有问题」的直接回应。</p></div>
+    <div class="card"><h3><span class="tag info">4</span> 多开不冲突</h3>
+      <p>启动先读 <code>port.json</code> 并实测端口是否存活；已有实例则只开新窗口、<b>不重复拉起内核、也不误杀别人的内核</b>。端口占用时 sidecar 自动顺延并回写端点文件。</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>四、怎么构建（通道恢复后一步到位）</h2>
+  <pre>双击  desktop/build.bat
+或命令行：
+  python desktop/build.py                 # 精简完整包（推荐，约 80–150 MB）
+  python desktop/build.py --with-whisper # 全量离线包（含 faster-whisper 模型链）
+  python desktop/build.py --console      # 留控制台窗口排障
+  python desktop/build.py --skip-tauri   # 只重打内核
+  python tests/falsify_desktop_paths.py  # 四组严格证伪
+
+产物：
+  desktop/dist/凌扬运动工作台_1.0.0_x64-setup.exe
+  desktop/dist/sidecar/lynvos-sidecar.exe
+  desktop/dist/BUILD_REPORT.json</pre>
+  <p class="small">构建脚本会做环境自检、Pillow 生成品牌图标、自动补装 PyInstaller 6.20、<code>npm install</code>、NSIS 打包，并跑「禁止缓存混入」清单门禁；任何一步失败写进 BUILD_REPORT.json 而不是静默通过。</p>
+</section>
+
+<section>
+  <h2>五、本轮交付文件</h2>
+  <table><tr><th>文件</th><th>作用</th></tr>
+    <tr><td><code>core/paths.py</code></td><td>新增。不依赖 util 的路径决策，供 sidecar 在 import core 之前使用</td></tr>
+    <tr><td><code>core/util.py</code> · <code>core/playbook.py</code></td><td>改动。ROOT 可由 LYNVOS_HOME 覆盖；playbook 统一走共享 ROOT</td></tr>
+    <tr><td><code>desktop/sidecar/app_entry.py</code></td><td>新增。桌面后端入口：引导、端口、父进程守护、启动服务</td></tr>
+    <tr><td><code>desktop/sidecar/lynvos.spec</code></td><td>新增。PyInstaller onedir 白名单，显式排除重依赖</td></tr>
+    <tr><td><code>desktop/src-tauri/</code></td><td>新增。Cargo.toml / build.rs / tauri.conf.json / capabilities / main.rs</td></tr>
+    <tr><td><code>desktop/ui/index.html</code> · <code>package.json</code></td><td>新增。占位页与 Tauri CLI 依赖</td></tr>
+    <tr><td><code>desktop/build.py</code> · <code>build.bat</code></td><td>新增。一键构建 + 双击入口</td></tr>
+    <tr><td><code>tests/test_desktop_paths.py</code></td><td>新增。17 项门禁：路径、引导、清单、生命周期、配置一致性</td></tr>
+    <tr><td><code>tests/falsify_desktop_paths.py</code></td><td>新增。4 组严格证伪（字节级改动 + 转红 + 恢复全绿）</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>六、验证状态与证据边界</h2>
+  <div class="grid">
+    <div class="card"><h3><span class="tag warn">未取得</span> 不要当结论</h3><ul>
+      <li>PyInstaller / cargo / tauri build 一次都没跑，<b>没有安装包</b></li>
+      <li>全量单测、新增 17 项门禁、4 组证伪 —— 本轮均无有效读数</li>
+      <li>Rust 代码未经编译，Tauri 2 配置未经运行时校验</li>
+      <li>安装后首次启动、界面加载、关窗无残留 —— 都还没实测</li>
+      <li>进程/端口本轮也没取到读数（shell 通道故障），不拿历史读数冒充</li>
+    </ul></div>
+    <div class="card"><h3><span class="tag good">已取得</span> 静态事实</h3><ul>
+      <li>任务表 78 项全 completed，0 个进行中、0 个待办</li>
+      <li>本机工具链读数（见第一节），来自本轮实测</li>
+      <li>核心代码 + 界面约 1 MB；864 MB 是缓存，不进包</li>
+      <li>完整代码、构建脚本、门禁与证伪已落盘（文件读写通道正常）</li>
+      <li>关键配置已按 Tauri 2 实际取值校正：<code>installMode=currentUser</code>（不是 <code>perUser</code>）</li>
+    </ul></div>
+  </div>
+  <p class="small" style="margin-top:12px"><b>已知风险点，构建时优先看：</b>① PyInstaller 6 的 <code>_MEIPASS</code> 指向 <code>_internal</code>，<code>bundle_root()</code> 已做同级回退，但仍需实测；② <code>WebviewUrl::External</code> 访问 <code>127.0.0.1</code>，本环境曾观测到 WorkBuddy 沙箱进程回环被拦（用户本机浏览器/历史 8787 服务正常），若安装后窗口空白用 <code>--console</code> 重建内核看日志；③ NSIS 工具链首次构建需联网下载；④ 精简包不收 faster-whisper，逐字稿功能会降级为「未安装」，需要就跑 <code>--with-whisper</code>。</p>
+</section>
+
+<section>
+  <h2>七、下一步（按优先级）</h2>
+  <ol>
+    <li>重启 WorkBuddy 恢复 shell 通道 → 跑 <code>python -m unittest discover -s tests -p "test_*.py"</code> 与 <code>python tests/falsify_desktop_paths.py</code>，先拿代码层读数</li>
+    <li>运行 <code>desktop/build.bat</code> 产出 NSIS 安装包，核对 BUILD_REPORT.json 里的体积与禁入清单</li>
+    <li>实际安装 → 首次启动 → 打开设置页改一次承诺方案 → 关窗后检查进程无残留</li>
+    <li>若回环在目标机器同样被拦，再评估「网卡 IP + 访问口令」的回退通道（当前刻意不做：会把单机应用暴露到局域网）</li>
+  </ol>
+  <p class="small">这一轮只交付「可安装应用」的完整代码与构建链路，不宣称已安装、已验证、已提升转化。既有事实边界（门店书面确认、达人授权、平台回执、真人盲评、投放转化）照旧仍缺。</p>
+</section>
+
+</div></body></html>

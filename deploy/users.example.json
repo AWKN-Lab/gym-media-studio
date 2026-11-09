@@ -1,0 +1,5 @@
+{
+  "_说明": "复制为 data/users.json 后生效。role=admin 可修改密钥/品牌配置/素材库；role=user 只能采集、生成、审核分镜、查看成片。密码请改成强口令，并把文件权限设为 600。",
+  "admin": { "password": "CHANGE_ME_ADMIN", "role": "admin" },
+  "editor": { "password": "CHANGE_ME_EDITOR", "role": "user" }
+}

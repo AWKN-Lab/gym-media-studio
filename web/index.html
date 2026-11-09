@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0e131c">
+<title>凌扬运动 LYNVOS FIT · 自媒体自动化工作台</title>
+<style>
+:root{
+  --bg:#0b0f16; --side:#0e131c; --panel:#131a25; --panel2:#182231; --line:#243044;
+  --txt:#e8eef7; --muted:#8b9bb2; --accent:#ff5a1f; --gold:#ffd166;
+  --ok:#2fd6a4; --warn:#ffb454; --err:#ff6b6b; --blue:#7dd3fc;
+  --navgroup:#5f7089; --accent-hover:#ff733f;
+  --accent-soft:rgba(255,90,31,.13); --accent-soft2:rgba(255,90,31,.18);
+  --accent-soft3:rgba(255,90,31,.14); --accent-soft4:rgba(255,90,31,.09);
+  --ok-soft:rgba(47,214,164,.14); --ok-soft2:rgba(47,214,164,.15); --ok-line:rgba(47,214,164,.4);
+  --warn-soft:rgba(255,180,84,.08); --warn-line:rgba(255,180,84,.3); --warn-soft2:rgba(255,180,84,.14);
+  --err-soft:rgba(255,107,107,.14); --err-soft2:rgba(255,107,107,.15); --err-line:rgba(255,107,107,.45);
+  --blue-soft:rgba(125,211,252,.14); --muted-soft:rgba(139,155,178,.14);
+  --logbg:#080b11; --logtxt:#9fb2cc; --preview-bg:#05070b; --tlhover:#4a5b76;
+  --hotline:rgba(36,48,68,.6); --hottext:#cfdaea; --pre-text:#c9d6e6;
+  --modal-bg:rgba(4,7,12,.9); --media-bg:#000; --card-shadow:none;
+  --side-w:216px;
+}
+/* 白天模式：浅底深字，所有强调色重新压深以保证对比度 */
+[data-theme="light"]{
+  --bg:#f3f6fb; --side:#ffffff; --panel:#ffffff; --panel2:#f0f4f9; --line:#dbe2ec;
+  --txt:#16202e; --muted:#5a6b81; --accent:#d9470f; --gold:#9a6600;
+  --ok:#078663; --warn:#a46200; --err:#c83232; --blue:#0b6ea8;
+  --navgroup:#8997a9; --accent-hover:#bb3909;
+  --accent-soft:rgba(217,71,15,.10); --accent-soft2:rgba(217,71,15,.13);
+  --accent-soft3:rgba(217,71,15,.10); --accent-soft4:rgba(217,71,15,.07);
+  --ok-soft:rgba(7,134,99,.11); --ok-soft2:rgba(7,134,99,.12); --ok-line:rgba(7,134,99,.38);
+  --warn-soft:rgba(164,98,0,.08); --warn-line:rgba(164,98,0,.28); --warn-soft2:rgba(164,98,0,.11);
+  --err-soft:rgba(200,50,50,.10); --err-soft2:rgba(200,50,50,.11); --err-line:rgba(200,50,50,.4);
+  --blue-soft:rgba(11,110,168,.10); --muted-soft:rgba(90,107,129,.11);
+  --logbg:#f7f9fc; --logtxt:#3e4f65; --preview-bg:#e8edf4; --tlhover:#aab8ca;
+  --hotline:rgba(196,206,220,.7); --hottext:#2a384c; --pre-text:#32435a;
+  --modal-bg:rgba(20,30,45,.55); --media-bg:#0b0f16; --card-shadow:0 2px 12px rgba(22,40,70,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:"Microsoft YaHei","PingFang SC",-apple-system,Segoe UI,sans-serif;font-size:14px;
+  transition:background-color .22s,color .22s}
+header,.side,.card,.vcard,.mcard,.voicecard,.taskrow,.keycard,.tlcard,.mbox,.pill{
+  transition:background-color .22s,border-color .22s,color .22s}
+.card,.vcard,.mcard,.voicecard,.taskrow,.keycard,.mbox{box-shadow:var(--card-shadow)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:0;border-radius:8px;transition:.15s}
+button:disabled{opacity:.45;cursor:not-allowed}
+select,input,textarea{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+  padding:9px 11px;border-radius:7px;font-family:inherit;font-size:13px;outline:none}
+select:focus,input:focus,textarea:focus{border-color:var(--accent)}
+label{font-size:11px;color:var(--muted)}
+code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:11px}
+
+/* ---------- 框架：顶栏 + 左侧资产导航 + 主工作区 ---------- */
+header{height:60px;border-bottom:1px solid var(--line);background:var(--side);
+  display:flex;align-items:center;gap:14px;padding:0 20px;position:sticky;top:0;z-index:30}
+.sidebtn{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px}
+.sidebtn:hover{border-color:var(--accent);color:var(--accent)}
+.sidebtn svg{width:18px;height:18px}
+.logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700}
+.logo i{width:8px;height:27px;background:var(--accent);border-radius:3px;display:block}
+.logo .en{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);
+  letter-spacing:1.5px;margin-left:5px;vertical-align:2px}
+.logo small{display:block;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:1.4px;margin-top:1px}
+header .sp{flex:1}
+.themebtn{width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;
+  background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:9px}
+.themebtn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.themebtn svg{width:19px;height:19px;display:none}
+[data-theme="dark"] .themebtn .ico-sun{display:block}
+[data-theme="light"] .themebtn .ico-moon{display:block}
+.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);
+  padding:6px 11px;border-radius:20px;background:var(--panel)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:7px}
+.dot.on{background:var(--ok);box-shadow:0 0 9px var(--ok);animation:pulse 1.3s infinite}
+@keyframes pulse{50%{opacity:.35}}
+/* 左侧栏在任何宽度下都固定在左边；窄屏收成图标栏，不再退化成顶部横排标签 */
+.shell{display:grid;grid-template-columns:var(--side-w) 1fr;min-height:calc(100vh - 60px)}
+.side{border-right:1px solid var(--line);background:var(--side);padding:16px 10px 40px;
+  position:sticky;top:60px;height:calc(100vh - 60px);overflow:auto;min-width:0}
+.side::-webkit-scrollbar{width:5px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.navgroup{font-size:10px;color:var(--navgroup);letter-spacing:1.6px;padding:14px 12px 7px;white-space:nowrap}
+.navitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;white-space:nowrap;
+  padding:10px 12px;border-radius:8px;color:var(--muted);background:none;font-size:13px;margin-bottom:2px}
+.navitem:hover{background:var(--panel);color:var(--txt)}
+.navitem.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.navitem .ic{width:18px;flex:none;text-align:center;font-size:15px;opacity:.9}
+.navitem .tx{overflow:hidden;text-overflow:ellipsis}
+.navitem .badge{margin-left:auto;flex:none;font-size:10px;background:var(--panel2);border:1px solid var(--line);
+  color:var(--muted);border-radius:9px;padding:1px 6px;font-weight:400}
+.navitem.active .badge{background:var(--accent-soft2);color:var(--accent);border-color:transparent}
+/* 图标栏模式：文字收起、图标居中、分组变分隔线 */
+.side-mini{--side-w:62px}
+.side-mini .side{padding:12px 7px 30px}
+.side-mini .navitem{justify-content:center;padding:11px 0;gap:0}
+.side-mini .navitem .tx,.side-mini .navgroup .tx,.side-mini .navitem .badge{display:none}
+.side-mini .navgroup{height:1px;padding:0;margin:9px 9px 8px;background:var(--line);
+  font-size:0;overflow:hidden;letter-spacing:0}
+.side-mini .navgroup:first-child{display:none}
+.main{padding:22px 26px 70px;max-width:1600px;width:100%;min-width:0}
+.pane{display:none}.pane.active{display:block}
+.pagehead{display:flex;align-items:flex-end;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.pagehead h1{margin:0;font-size:20px;letter-spacing:.3px}
+.pagehead p{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
+.pagehead .sp{flex:1}
+
+/* ---------- 通用组件 ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px}
+.card h2{margin:0 0 14px;font-size:13px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.card h2::before{content:"";width:3px;height:14px;background:var(--accent);border-radius:2px}
+.card h2 span{margin-left:auto;font-size:11px;color:var(--muted);font-weight:400;letter-spacing:0}
+.btn{background:var(--accent);color:#fff;padding:10px 18px;font-weight:600;font-size:13px}
+.btn:hover:not(:disabled){background:var(--accent-hover);transform:translateY(-1px)}
+.btn.ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line);font-weight:400}
+.btn.ghost:hover:not(:disabled){border-color:var(--accent)}
+.mini{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:7px 12px;font-size:12px;margin:4px 6px 0 0}
+.mini:hover{border-color:var(--accent)}
+.bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+.hint{background:var(--warn-soft);border:1px solid var(--warn-line);
+  color:var(--warn);font-size:12px;line-height:1.8;padding:11px 14px;border-radius:9px;margin-bottom:16px}
+.note{color:var(--muted);font-size:12px;line-height:1.8;border-top:1px dashed var(--line);
+  padding-top:12px;margin-top:14px}
+.empty{color:var(--muted);text-align:center;padding:34px 10px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--accent-soft3);color:var(--accent)}
+.tag.g{background:var(--ok-soft);color:var(--ok)}
+.tag.b{background:var(--blue-soft);color:var(--blue)}
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px}
+.form label{display:block;margin-bottom:5px}
+.form input,.form textarea,.form select{width:100%}
+.form textarea{min-height:70px;resize:vertical}
+.logbox{background:var(--logbg);border:1px solid var(--line);border-radius:9px;padding:11px;
+  font-family:Consolas,Monaco,monospace;font-size:11px;line-height:1.7;height:190px;
+  overflow:auto;color:var(--logtxt);white-space:pre-wrap;word-break:break-all}
+.logbox .e{color:var(--err)}.logbox .s{color:var(--ok)}.logbox .w{color:var(--warn)}
+
+/* ---------- 创作台 ---------- */
+.studio{display:grid;grid-template-columns:290px minmax(250px,330px) 1fr;gap:16px;align-items:stretch}
+.studio>.card{display:flex;flex-direction:column}
+.studio .logbox{flex:1;min-height:210px}
+.studio .quick{margin-top:auto}
+.minikpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:13px}
+.minikpi div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.minikpi b{display:block;font-size:17px;color:var(--gold);line-height:1.25}
+.minikpi span{font-size:10px;color:var(--muted)}
+.field{margin-bottom:13px}
+.field label{display:block;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%}
+.seg{display:flex;gap:6px;margin-bottom:14px}
+.seg button{flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--muted);
+  padding:9px 6px;font-size:12px}
+.seg button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft4)}
+.bigbtn{width:100%;padding:13px;font-size:14px}
+.preview{background:var(--preview-bg);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.preview video{width:100%;aspect-ratio:9/16;object-fit:contain;display:block;background:var(--media-bg)}
+.preview .pi{padding:12px}
+.preview .pi b{display:block;font-size:13px;line-height:1.5;margin-bottom:7px}
+.preview .pi .meta{font-size:11px;color:var(--muted);display:flex;gap:9px;flex-wrap:wrap}
+.flowlist{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.flowrow{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:8px;
+  background:var(--panel2);border:1px solid var(--line);font-size:12px}
+.flowrow .fi{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--muted);flex:none}
+.flowrow.done .fi{background:var(--ok-soft2);border-color:var(--ok);color:var(--ok)}
+.flowrow.fail .fi{background:var(--err-soft2);border-color:var(--err);color:var(--err)}
+.flowrow.done .fn{color:var(--ok)}
+.flowrow .fd{margin-left:auto;color:var(--muted);font-size:10px;text-align:right;max-width:52%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-top:16px}
+.quick button{background:var(--panel);border:1px solid var(--line);color:var(--txt);
+  padding:15px 10px;text-align:left;border-radius:11px}
+.quick button:hover{border-color:var(--accent)}
+.quick b{display:block;font-size:13px;margin-bottom:5px}
+.quick span{font-size:11px;color:var(--muted)}
+
+/* ---------- 镜剪辑：横向胶片 + 编辑台 ---------- */
+.timeline{display:flex;gap:11px;overflow-x:auto;padding:4px 2px 15px;margin-bottom:14px}
+.tlcard{flex:0 0 152px;background:var(--panel2);border:2px solid var(--line);border-radius:11px;
+  overflow:hidden;cursor:pointer;transition:.15s}
+.tlcard:hover{border-color:var(--tlhover)}
+.tlcard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tlcard video{width:100%;height:196px;object-fit:cover;background:var(--media-bg);display:block}
+.tlcard .ti{padding:8px 9px}
+.tlcard .ti b{display:block;font-size:11px;color:var(--gold);margin-bottom:4px}
+.tlcard .ti span{font-size:11px;line-height:1.5;display:block;color:var(--txt)}
+.tlcard .ti em{font-style:normal;font-size:10px;color:var(--muted)}
+.editgrid{display:grid;grid-template-columns:190px 1fr;gap:16px}
+.editgrid video{width:190px;height:338px;object-fit:cover;background:var(--media-bg);border-radius:9px}
+.pf{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pf label{display:block;margin-bottom:4px}
+.pf input,.pf select,.pf textarea{width:100%}
+.pf textarea{min-height:62px;resize:vertical}
+
+/* ---------- 作品 / 素材 / 音色 / 任务 / 发布 ---------- */
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  transition:.18s;cursor:pointer}
+.vcard:hover{border-color:var(--accent);transform:translateY(-3px)}
+.vcard img{width:100%;aspect-ratio:9/10;object-fit:cover;display:block;background:var(--media-bg)}
+.vcard .body{padding:12px}
+.vcard h3{margin:0 0 8px;font-size:13px;line-height:1.5}
+.vcard p{margin:0;font-size:11px;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:13px}
+.mcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.mcard video,.mcard img{width:100%;height:175px;object-fit:cover;background:var(--media-bg);display:block}
+.mcard .mi{padding:10px;font-size:12px}
+.mcard .mi b{display:block;font-size:12px;margin-bottom:5px;word-break:break-all;line-height:1.4}
+.mcard .mi span{color:var(--muted);font-size:11px}
+#folderList .mgrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.foldercard .mi b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  word-break:normal;line-height:1.5}
+.foldercard .mi .meta{display:block;line-height:1.6;margin-bottom:7px}
+.chip{display:inline-block;font-size:10px;padding:2px 6px;border-radius:4px;
+  background:var(--blue-soft);color:var(--blue);margin:3px 3px 0 0}
+.voicecard{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+.voicecard.cur{border-color:var(--ok)}
+.voicecard.off{opacity:.66}
+.voicecard .mini:disabled{opacity:.45;cursor:not-allowed}
+.voicecard h3{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.enginecard{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:9px;background:var(--panel2);min-width:215px;flex:1;font-size:12px}
+.enginecard.on{border-color:var(--ok)}
+.enginecard span{color:var(--muted);font-size:11px;line-height:1.6}
+.grouphead{display:flex;align-items:baseline;gap:10px;margin:18px 0 10px;font-size:13px}
+.grouphead span{color:var(--muted);font-size:11px}
+.voicecard .vmeta{font-size:11px;color:var(--muted);line-height:1.7;margin-bottom:10px}
+.voicecard audio{width:100%;height:30px;margin-top:8px}
+.taskrow{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:13px 15px;margin-bottom:10px}
+.taskrow .th{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.taskrow .th b{font-size:13px;font-family:Consolas,monospace}
+.taskrow .th .sp{flex:1}
+.st{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--muted-soft);color:var(--muted)}
+.st.done{background:var(--ok-soft);color:var(--ok)}
+.st.prepared{background:var(--blue-soft);color:var(--blue)}
+.st.failed{background:var(--err-soft);color:var(--err)}
+.st.scripts,.st.running{background:var(--warn-soft2);color:var(--warn)}
+.steps{display:flex;gap:5px;flex-wrap:wrap}
+.steps span{font-size:10px;padding:3px 8px;border-radius:5px;background:var(--panel);
+  border:1px solid var(--line);color:var(--muted)}
+.steps span.done{border-color:var(--ok-line);color:var(--ok)}
+.steps span.fail{border-color:var(--err-line);color:var(--err)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:400;font-size:11px}
+td input,td select{width:100%;padding:6px 8px;font-size:12px}
+.keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:13px}
+.keycard{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+.keycard h3{margin:0 0 4px;font-size:13px;display:flex;align-items:center;gap:8px}
+.keycard .usage{color:var(--muted);font-size:11px;margin-bottom:10px;line-height:1.6}
+.keycard .row{display:flex;gap:7px;margin-top:8px;align-items:center}
+.keycard input{flex:1;min-width:0}
+.state{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--muted-soft);color:var(--muted)}
+.state.ok{background:var(--ok-soft);color:var(--ok)}
+.testmsg{font-size:11px;color:var(--warn);min-height:15px;margin-top:6px;word-break:break-all}
+.hotrow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--hotline);font-size:12.5px}
+.hotrow:last-child{border:0}
+.hotrow .rk{color:var(--accent);font-weight:700;width:22px;flex:none}
+.hotrow .tt{flex:1;color:var(--hottext);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hotrow .pf{color:var(--muted);font-size:11px;flex:none}
+.hotrow.fit .tt{color:var(--ok)}
+.sc{border-left:2px solid var(--accent);padding:2px 0 2px 12px;margin:11px 0;font-size:12.5px;line-height:1.7}
+.sc b{color:var(--gold);font-size:11px}
+
+/* ---------- 成片弹层 ---------- */
+.modal{position:fixed;inset:0;background:var(--modal-bg);z-index:60;display:none;
+  align-items:center;justify-content:center;padding:22px;overflow:auto}
+.modal.show{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:15px;
+  max-width:900px;width:100%;display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+.mbox video{width:100%;height:100%;max-height:640px;object-fit:contain;background:var(--media-bg)}
+.minfo{padding:20px;overflow:auto;max-height:640px}
+.minfo h3{margin:0 0 12px;font-size:17px}
+.minfo pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:12px;
+  line-height:1.8;color:var(--pre-text);background:var(--panel2);padding:12px;border-radius:9px}
+.close{float:right;background:var(--panel2);color:var(--txt);padding:6px 11px}
+
+/* ---------- 本机目录选择器 ---------- */
+.dirbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  width:min(780px,100%);max-height:min(82vh,780px);display:flex;flex-direction:column;
+  overflow:hidden;box-shadow:var(--card-shadow)}
+.dirhead{padding:16px 18px 12px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:flex-start}
+.dirhead h3{margin:0 0 5px;font-size:16px}
+.dirhead p{margin:0;color:var(--muted);font-size:12px;line-height:1.65}
+.dirbar{padding:10px 18px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.dirbar input[type=text]{flex:1;min-width:210px}
+.dirchips{padding:10px 18px 2px;display:flex;gap:6px;flex-wrap:wrap}
+.dirlist{padding:10px 18px 14px;overflow:auto;flex:1;min-height:190px;max-height:44vh}
+.drow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  cursor:pointer;font-size:13px;border:1px solid transparent}
+.drow:hover{background:var(--panel2);border-color:var(--line)}
+.drow .di{width:18px;text-align:center;color:var(--accent);flex:none}
+.drow .dn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.drow .dv{color:var(--muted);font-size:11px;flex:none}
+.dirfoot{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:12px;
+  align-items:center;justify-content:space-between;flex-wrap:wrap}
+.dirfoot .note{font-size:12px;color:var(--muted);flex:1;min-width:200px}
+@media(max-width:1180px){.studio{grid-template-columns:1fr 300px}.studio>.card:last-child{grid-column:1/-1}}
+/* 窄屏只压缩主工作区，左侧栏依旧在左侧（由 JS 自动收成 62px 图标栏） */
+@media(max-width:1000px){
+  .studio{grid-template-columns:1fr}
+  .studio>.card:last-child{grid-column:auto}
+  .editgrid{grid-template-columns:1fr}.mbox{grid-template-columns:1fr}.pf{grid-template-columns:1fr}
+  .main{padding:18px 16px 60px}
+}
+@media(max-width:700px){
+  header{padding:0 12px;gap:9px}
+  .logo{font-size:15px}.logo .en,.logo small,#brandPill,#userPill{display:none}
+  header>.btn{padding:9px 11px;font-size:12px}
+  .pill{padding:5px 8px;font-size:11px}
+  .quick,.minikpi{grid-template-columns:repeat(2,1fr)}
+  .timeline{padding-bottom:12px}
+}
+</style>
+<script id="themeInit">
+/* 首屏即应用主题，避免刷新时闪白/闪黑。
+   优先级：URL ?theme=light|dark > 用户手动选择 > 系统白天/夜间偏好。 */
+(function(){
+  var forced=new URLSearchParams(location.search).get('theme');
+  var t=(forced==='light'||forced==='dark')?forced:localStorage.getItem('gympulse-theme');
+  if(t!=='light'&&t!=='dark'){
+    t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',t==='light'?'#ffffff':'#0e131c');
+})();
+</script>
+<script id="sideInit">
+/* 首屏即决定左侧栏宽度，避免刷新时先宽后窄跳一下。
+   用户手动选过就记在 localStorage；否则窄屏自动收成图标栏，但始终在左侧。 */
+(function(){
+  var saved=null;try{saved=localStorage.getItem('lynnvos-side')}catch(e){}
+  window.__sideManual=(saved==='mini'||saved==='full');
+  var mini=window.__sideManual?(saved==='mini'):(window.innerWidth<=1000);
+  document.documentElement.classList.toggle('side-mini',mini);
+})();
+</script>
+</head>
+<body>
+<header>
+  <button class="sidebtn" id="sideBtn" type="button" onclick="toggleSide()"
+          title="展开 / 收起左侧栏" aria-label="展开 / 收起左侧栏" aria-expanded="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+      <path d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+  <div class="logo"><i></i><div>凌扬运动 <span class="en">LYNVOS FIT</span><small>自媒体自动化工作台</small></div></div>
+  <div class="sp"></div>
+  <div class="pill"><span class="dot" id="dot"></span><span id="statusTxt">空闲</span></div>
+  <div class="pill" id="brandPill">品牌</div>
+  <div class="pill" id="userPill" style="display:none"></div>
+  <button class="themebtn" id="themeBtn" type="button" onclick="toggleTheme()" title="切换白天 / 夜间模式">
+    <svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+         stroke-linecap="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.1"/>
+      <path d="M12 2.3v2.1M12 19.6v2.1M2.3 12h2.1M19.6 12h2.1M5.1 5.1l1.5 1.5M17.4 17.4l1.5 1.5M18.9 5.1l-1.5 1.5M6.6 17.4l-1.5 1.5"/>
+    </svg>
+    <svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M20.6 14.4A8.8 8.8 0 0 1 9.6 3.4a8.8 8.8 0 1 0 11 11z"/>
+    </svg>
+  </button>
+  <button class="btn" onclick="nav('studio')">＋ 新建任务</button>
+</header>
+
+<div class="shell">
+<aside class="side" id="sideNav">
+  <div class="navgroup"><span class="tx">创作</span></div>
+  <button class="navitem active" data-nav="studio" title="创作台" onclick="nav('studio')"><span class="ic">✦</span><span class="tx">创作台</span></button>
+
+  <div class="navgroup"><span class="tx">资产与账号</span></div>
+  <button class="navitem" data-nav="keys" title="账号管理（API KEY）" onclick="nav('keys')"><span class="ic">⚿</span><span class="tx">账号管理</span><span class="badge" id="bgKeys">KEY</span></button>
+  <button class="navitem" data-nav="assets" title="素材" onclick="nav('assets')"><span class="ic">▣</span><span class="tx">素材</span><span class="badge" id="bgAssets">0</span></button>
+  <button class="navitem" data-nav="voices" title="音色管理" onclick="nav('voices')"><span class="ic">♫</span><span class="tx">音色管理</span></button>
+  <button class="navitem" data-nav="transcribe" title="逐字稿（本地语音转文字）" onclick="nav('transcribe')"><span class="ic">⌨</span><span class="tx">逐字稿</span></button>
+  <button class="navitem" data-nav="publish" title="发布账号管理" onclick="nav('publish')"><span class="ic">↗</span><span class="tx">发布账号管理</span><span class="badge" id="bgPublish">0</span></button>
+
+  <div class="navgroup"><span class="tx">生产流程</span></div>
+  <button class="navitem" data-nav="edit" title="镜剪辑" onclick="nav('edit')"><span class="ic">▤</span><span class="tx">镜剪辑</span></button>
+  <button class="navitem" data-nav="tasks" title="任务中心" onclick="nav('tasks')"><span class="ic">◷</span><span class="tx">任务中心</span><span class="badge" id="bgTasks">0</span></button>
+  <button class="navitem" data-nav="videos" title="作品库" onclick="nav('videos')"><span class="ic">▶</span><span class="tx">作品库</span><span class="badge" id="bgVideos">0</span></button>
+
+  <div class="navgroup"><span class="tx">洞察与设置</span></div>
+  <button class="navitem" data-nav="hot" title="今日热点" onclick="nav('hot')"><span class="ic">⌁</span><span class="tx">今日热点</span></button>
+  <button class="navitem" data-nav="scripts" title="脚本与文案" onclick="nav('scripts')"><span class="ic">≡</span><span class="tx">脚本与文案</span></button>
+  <button class="navitem" data-nav="settings" title="平台设置" onclick="nav('settings')"><span class="ic">⚙</span><span class="tx">平台设置</span></button>
+</aside>
+
+<main class="main">
+
+<!-- ==================== 创作台 ==================== -->
+<div class="pane active" id="pane-studio">
+  <div class="pagehead"><h1>创作台</h1>
+    <p>AI 出方案 → 人工审核换片 → 渲染成片。中间那块是最新成片，随时可播。</p></div>
+  <div class="studio">
+    <div class="card">
+      <h2>新建任务 <span>一条视频从这里开始</span></h2>
+      <div class="seg">
+        <button id="modePrepare" class="on" onclick="setMode('prepare')">① 出方案待审核</button>
+        <button id="modeAll" onclick="setMode('all')">② 直接出片</button>
+      </div>
+      <div class="field"><label>选题（留空 = 自动从今日热点 + 常青选题库挑）</label>
+        <input id="topicInput" placeholder="例如：新手第一次进健身房该练什么"></div>
+      <div class="field"><label>生成条数</label>
+        <select id="count"><option>1</option><option>2</option><option>3</option></select></div>
+      <div class="field"><label>素材来源</label>
+        <select id="srcHint"><option>优先自有门店实拍</option><option>仅用自有实拍（不铺演示素材）</option></select></div>
+      <button class="btn bigbtn" id="runBtn" onclick="startRun()">开始生成</button>
+      <div class="note" id="note">
+        画面来自 <b>真实健身房视频素材</b>：优先用「素材」里上传的门店实拍。
+        服务商 Key 在「账号管理」自行填写，只存本机；不填也能用模板脚本跑通全流程。
+      </div>
+      <div class="quick">
+        <button onclick="nav('edit')"><b>▤ 镜剪辑</b><span>逐镜换片 / 改文案</span></button>
+        <button onclick="nav('assets')"><b>▣ 素材</b><span>上传门店实拍</span></button>
+        <button onclick="nav('videos')"><b>▶ 作品库</b><span>看成片 / 待发布</span></button>
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px">
+      <h2>成片预览 <span id="runIdLabel"></span></h2>
+      <div class="preview">
+        <video id="heroVideo" controls playsinline poster=""></video>
+        <div class="pi"><b id="heroTitle">暂无成片</b>
+          <div class="meta" id="heroMeta">生成后在这里直接播放</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>流程状态 <span>完成标绿 · 实时日志</span></h2>
+      <div class="minikpi">
+        <div><b id="kHot">0</b><span>今日热点</span></div>
+        <div><b id="kFit">0</b><span>健身相关</span></div>
+        <div><b id="kVid">0</b><span>已成片</span></div>
+        <div><b id="kAsset">0</b><span>实拍素材</span></div>
+      </div>
+      <div class="flowlist" id="steps">
+        <div class="flowrow"><span class="fi">·</span><span class="fn">等待任务启动</span></div>
+      </div>
+      <div class="logbox" id="log">等待任务启动...</div>
+      <div class="note" style="border:0;padding-top:9px;margin-top:6px">
+        一键全自动会跳过人工审核；日常建议用「出方案待审核」，到「镜剪辑」确认画面后再渲染。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 账号管理 ==================== -->
+<div class="pane" id="pane-keys">
+  <div class="pagehead"><h1>账号管理</h1>
+    <p>默认零密钥：优先用本机开源网关的免费 / 登录态模型，用不到你的 API Key。下方自有 Key 只是可选增强。</p></div>
+
+  <div class="card" style="margin-bottom:18px">
+    <h2>免费模型通道 <span class="state" id="gwState" style="margin-left:auto">检测中…</span></h2>
+    <div class="hint" style="background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok)">
+      <b>不用填 Key。</b>在 <a href="https://github.com/yetone/magpie" target="_blank" style="color:var(--blue)">Magpie 喜鹊</a>（MIT 开源）
+      客户端的「供应商」里登录 WorkBuddy / OpenCode Zen / Copilot 等账号，本机网关即提供免费或已订阅模型，本工作台直接调用。
+      也可把地址改成 Ollama、gpt4free 等任意 OpenAI 兼容开源网关。
+    </div>
+    <div class="form">
+      <div><label>网关地址（OpenAI 兼容 /v1）</label><input id="gwBase" placeholder="http://127.0.0.1:3425/v1"></div>
+      <div><label>模型 ID（留空＝自动挑实测可用的免费模型）</label><input id="gwModel" placeholder="自动"></div>
+      <div><label>网关 Token（本机网关一般留空；留空表示不修改）</label>
+        <input id="gwKey" type="password" placeholder="留空" autocomplete="off"></div>
+    </div>
+    <div class="bar" style="margin:14px 0 6px">
+      <button class="btn" onclick="saveGateway()">保存通道设置</button>
+      <button class="btn ghost" onclick="loadGateway(1)">重新检测可用模型</button>
+      <button class="btn ghost" onclick="testGateway()">测试当前模型</button>
+      <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)">
+        <input type="checkbox" id="gwEnabled" style="width:auto"> 启用</label>
+      <span id="gwTip" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div class="note" id="gwInfo" style="border-top:0;padding-top:0"></div>
+  </div>
+
+  <div class="pagehead" style="margin-bottom:12px"><h1 style="font-size:16px">可选：自有 API Key</h1>
+    <p>默认全部关闭。平台不会读取环境变量中已有的 Key，只有你在这里主动填写并保存才会启用。</p></div>
+  <div class="hint" id="envHint">正在检测环境变量…</div>
+  <div class="bar">
+    <button class="btn" onclick="saveKeys()">保存全部密钥</button>
+    <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)">
+      <input type="checkbox" id="allowEnv" style="width:auto"> 允许读取系统环境变量中的 Key（默认关闭）</label>
+    <span id="keyTip" style="color:var(--muted);font-size:12px"></span>
+  </div>
+  <div class="keygrid" id="keyGrid"></div>
+</div>
+
+<!-- ==================== 素材 ==================== -->
+<div class="pane" id="pane-assets">
+  <div class="pagehead"><h1>素材</h1><p>本地化直连：登记本机文件夹后平台只建索引，<b>不上传、不复制、原文件保持原位</b>，剪辑时直接读原片。文件名带关键词（教练、器械、深蹲、门店、团课、有氧）会优先匹配对应分镜。</p></div>
+
+  <div class="card" style="background:var(--panel2);margin-bottom:14px">
+    <h2>本机素材文件夹 <span class="state ok" id="localBadge">纯本地</span></h2>
+    <div class="hint" style="margin:8px 0 12px">
+      控制台跑在哪台电脑，就选那台电脑上的目录。点「浏览本机目录」可逐级点选，
+      也可以直接粘贴完整路径（如 <code>D:\门店实拍</code>）。平台只用 ffprobe 读时长与分辨率，
+      <b>不会把视频传到任何服务器，也不会拷进项目</b>；移除登记只删索引，绝不删除原文件。
+      支持 mp4 / mov / mkv / avi / m4v / webm / jpg / png，最多递归 3 层、400 个文件。
+      列表里的小图是按需生成的 360×640 缩略图缓存（<code>data/thumbs/</code>），不是原片副本。
+    </div>
+    <div class="bar" style="margin:0 0 10px">
+      <input id="folderPath" style="flex:1;min-width:260px" placeholder="点右侧「浏览本机目录」选择，或粘贴完整路径">
+      <button class="btn ghost" onclick="openDirBrowser('')">浏览本机目录…</button>
+      <button class="btn" onclick="addLocalFolder()">添加文件夹</button>
+      <button class="btn ghost" onclick="scanLocalFolders()">重新扫描</button>
+    </div>
+    <div class="bar" style="margin:0 0 10px">
+      <label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)">
+        <input type="checkbox" id="localOnly" style="width:auto" onchange="setLocalMode()"> 纯本地模式（禁止联网下载 / 检索素材）</label>
+      <span id="localTip" style="color:var(--muted);font-size:12px"></span>
+    </div>
+    <div id="folderList" class="empty">尚未登记本机文件夹</div>
+  </div>
+
+  <details style="margin-bottom:14px">
+    <summary style="cursor:pointer;color:var(--muted);font-size:12px;padding:6px 0">可选：复制到项目素材库 / 联网获取素材（纯本地化无需使用）</summary>
+    <div class="card" style="margin-top:10px;background:var(--panel2)">
+      <div class="bar" style="margin:0">
+        <input type="file" id="fileInput" multiple accept="image/*,video/*">
+        <button class="btn ghost" onclick="uploadFiles()">复制到项目库</button>
+        <button class="btn ghost" onclick="fetchDemo()">联网拉取演示实拍</button>
+        <input id="pexelsQuery" value="gym workout" style="width:145px" placeholder="英文关键词">
+        <button class="btn ghost" onclick="pexelsSearch()">Pexels 检索</button>
+        <span id="upTip" style="color:var(--muted);font-size:12px"></span>
+      </div>
+      <div class="note" id="licenseNote"></div>
+    </div>
+  </details>
+
+  <div id="assetList" class="empty">素材库为空</div>
+</div>
+
+<!-- ==================== 音色管理 ==================== -->
+<div class="pane" id="pane-voices">
+  <div class="pagehead"><h1>音色管理</h1><p>零密钥、零付费：本机 Windows 语音包可完全离线配音（断网也能用），edge-tts 是免费在线档（默认）。试听与成片走同一条合成链，点「设为默认」下条视频立即生效。</p></div>
+  <div class="card" style="margin-bottom:15px">
+    <h2>配音引擎 <span class="state ok" id="voiceZeroKey">零密钥可用</span></h2>
+    <div class="bar" id="engineList" style="margin:10px 0"></div>
+    <div class="hint" id="voiceNote" style="margin:0 0 12px"></div>
+    <div class="bar" style="margin:0">
+      <div style="flex:1;min-width:240px"><label>试听文本（最多 60 字）</label>
+        <input id="voiceText" style="width:100%" value="欢迎来到凌扬运动，科学训练，看得见的改变。"></div>
+      <div><label>语速 0.5~2.0</label><input id="voiceSpeed" type="number" step="0.05" min="0.5" max="2" style="width:110px"></div>
+      <button class="btn ghost" onclick="saveVoiceSpeed()">保存语速</button>
+      <button class="btn ghost" onclick="refreshVoices()">重新检测引擎</button>
+      <span id="voiceTip" style="color:var(--muted);font-size:12px"></span>
+    </div>
+  </div>
+  <div id="voiceGrid"></div>
+</div>
+
+<!-- ==================== 逐字稿（本地语音转文字） ==================== -->
+<div class="pane" id="pane-transcribe">
+  <div class="pagehead"><h1>逐字稿 · 本地语音转文字</h1>
+    <p>免费、本地、零密钥：用 faster-whisper 把抖音 / 视频号的视频（或任何音频）转成带时间戳的逐字稿。
+    文件不离开本机；默认 base 模型识别更准（首次使用自动从镜像下载，之后本机缓存），需要更高精度可切 small，追求离线零等待可切 tiny。转写结果可直接当作脚本素材。</p></div>
+  <div class="card" style="margin-bottom:15px">
+    <h2>选择待转写的视频 / 音频</h2>
+    <div class="seg" id="tSeg" style="margin-bottom:10px">
+      <button id="tsrcUpload" class="on" onclick="setTsrc('upload')">① 上传文件</button>
+      <button id="tsrcPath" onclick="setTsrc('path')">② 本机文件路径</button>
+      <button id="tsrcLib" onclick="setTsrc('lib')">③ 素材库文件</button>
+    </div>
+    <div id="tsrcUploadBox">
+      <input id="tfFile" type="file" accept="video/*,audio/*" style="width:100%">
+    </div>
+    <div id="tsrcPathBox" style="display:none">
+      <input id="tfPath" style="width:100%" placeholder="例如 D:\下载\douyin_xxxx.mp4（必须是本机真实存在的文件）">
+    </div>
+    <div id="tsrcLibBox" style="display:none">
+      <select id="tfLib" style="width:100%"></select>
+    </div>
+    <div class="bar" style="margin-top:12px">
+      <div><label>模型</label>
+        <select id="tfModel" style="min-width:120px"></select></div>
+      <div><label>语言</label>
+        <select id="tfLang" style="min-width:120px">
+          <option value="zh">中文</option>
+          <option value="en">英文</option>
+          <option value="auto">自动检测</option>
+        </select></div>
+      <button class="btn" id="tfGo" onclick="startTranscribe()">开始转写</button>
+      <span id="tfMsg" class="hint"></span>
+    </div>
+  </div>
+  <div class="card" id="tResultCard" style="display:none">
+    <h2>逐字稿结果 <span id="tMeta" class="hint"></span></h2>
+    <div class="bar" style="margin-bottom:10px">
+      <button class="btn ghost" onclick="copyTranscript()">复制全文</button>
+      <a class="btn ghost" id="dlTxt" download>下载 TXT</a>
+      <a class="btn ghost" id="dlSrt" download>下载 SRT</a>
+    </div>
+    <div id="tSegs" style="max-height:46vh;overflow:auto"></div>
+  </div>
+  <div class="card">
+    <h2>历史逐字稿</h2>
+    <div id="tHistory" class="hint">暂无</div>
+    <div id="tScriptList" class="hint" style="margin-top:8px"></div>
+  </div>
+  <div class="card" id="tScriptCard" style="display:none">
+    <h2>分镜脚本草稿 <span id="tsMeta" class="hint"></span></h2>
+    <div class="bar" style="margin-bottom:10px">
+      <label>每镜合并段数</label>
+      <select id="tsPer" style="min-width:70px"><option value="1">1</option>
+        <option value="2" selected>2</option><option value="3">3</option><option value="4">4</option></select>
+      <button class="btn ghost" onclick="regenScript()">重新生成</button>
+      <span class="sp"></span>
+      <button class="btn ghost" onclick="copyScriptText()">复制全文</button>
+      <button class="btn ghost" onclick="downloadScriptJson()">下载 JSON</button>
+      <button class="btn" onclick="saveScriptEdit()">保存编辑</button>
+      <span id="tsTip" class="hint"></span>
+    </div>
+    <div id="tsScenes" style="max-height:46vh;overflow:auto"></div>
+    <div style="margin-top:10px"><button class="mini" onclick="addScriptScene()">＋ 添加一镜</button></div>
+    <div class="hint" style="margin-top:8px">脚本由本地逐字稿按时间顺序合并生成，可人工改写每镜口播文案与时长。保存后落在 data/scripts/，可复制 / 下载作为创作台与剪辑的脚本素材。</div>
+  </div>
+</div>
+
+<!-- ==================== 镜剪辑 ==================== -->
+<div class="pane" id="pane-edit">
+  <div class="pagehead"><h1>镜剪辑</h1><p>AI 只出初稿。点时间线上的分镜选中，再换素材、改入点、改文案；改口播会自动重新配音。</p></div>
+  <div class="bar">
+    <select id="planRunSelect" style="min-width:205px" onchange="loadPlan()"></select>
+    <button class="mini" onclick="loadPlan()">刷新方案</button>
+    <button class="btn ghost" onclick="savePlan()">保存修改</button>
+    <button class="btn" id="renderBtn" onclick="renderPlan()">确认方案并渲染成片</button>
+    <span id="planTip" style="color:var(--muted);font-size:12px"></span>
+  </div>
+  <div class="hint" style="margin-bottom:12px">
+    横向胶片 = 成片时间线。选中某一镜后，下方编辑台会显示该镜的实拍素材、入点和文案；更换素材后按配音真实时长重新裁切。
+  </div>
+  <div class="timeline" id="timeline"></div>
+  <div id="editPanel" class="empty">请先到创作台运行一次「出方案待审核」</div>
+</div>
+
+<!-- ==================== 任务中心 ==================== -->
+<div class="pane" id="pane-tasks">
+  <div class="pagehead"><h1>任务中心</h1><p>每次生成的全过程记录：步骤、耗时、产物与失败原因。可跳回审核或查看成片。</p>
+    <div class="sp"></div><button class="btn ghost" onclick="loadTasks()">刷新</button></div>
+  <div id="taskList" class="empty">加载中...</div>
+</div>
+
+<!-- ==================== 作品库 ==================== -->
+<div class="pane" id="pane-videos">
+  <div class="pagehead"><h1>作品库</h1><p>成片、封面、字幕与发布文案都在这里。点卡片播放并一键加入待发布清单。</p></div>
+  <div class="grid" id="videoGrid"></div>
+</div>
+
+<!-- ==================== 发布账号管理 ==================== -->
+<div class="pane" id="pane-publish">
+  <div class="pagehead"><h1>发布账号管理</h1>
+    <p>登记真实矩阵账号（平台 / 登录方式 / 本机凭证），在每个账号下管理<b>草稿箱</b>、用账号视角<b>搜热点</b>、<b>管理评论</b>并 AI 起草<b>回复</b>。凭证只存本机、不回传、不代持登录态、不做无人值守发布。</p></div>
+  <div class="hint">
+    <b>真连接边界（如实标注）：</b>
+    <b>已真实联网</b>：B站 / 抖音热榜与关键词搜索（公开接口，无需登录）、B站视频评论（填 BV 号即可拉真实评论）；
+    <b>需登录态</b>：B站真实发草稿 / 发布需在本账号配置 SESSDATA + bili_jct（仅管理员可保存）；
+    <b>需企业资质</b>：抖音 / 视频号 / 小红书的账号私有评论与自动发布受官方开放平台资质管控，本工作台不伪造接口；
+    <b>纯本地</b>：草稿箱、评论台账、AI 起草回复、待发布清单。凭证与 Cookie 只存本机、绝不回传前端明文。
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h2>账号台账 <span>真实账号信息，凭证仅本机存放</span></h2>
+    <table><thead><tr><th style="width:96px">平台</th><th style="width:150px">账号名</th><th style="width:120px">登录方式</th><th>凭证（本机）</th><th style="width:78px">登录态</th><th style="width:70px">状态</th><th style="width:50px"></th></tr></thead>
+      <tbody id="accBody"></tbody></table>
+    <div style="margin-top:12px"><button class="mini" onclick="addAccountRow()">＋ 添加账号</button>
+      <button class="btn" onclick="saveAccounts()">保存台账</button>
+      <span id="accTip" style="color:var(--muted);font-size:12px;margin-left:10px"></span></div>
+  </div>
+  <div class="card" id="cookieCard" style="display:none;margin-bottom:16px">
+    <h2>配置平台登录态 <span id="cookieWho" class="hint"></span></h2>
+    <div class="hint">仅管理员可保存。B站：浏览器登录后 F12 → Application → Cookies 复制 SESSDATA 与 bili_jct；
+      抖音 / 小红书的评论与笔记需 MediaCrawler 的 Playwright 登录态（签名），暂不支持直接粘贴 Cookie。
+      Cookie 只存本机 <code>data/publish/&lt;账号&gt;/cookies.json</code>，留空表示保留原值，绝不回传前端。</div>
+    <div class="bar" style="margin-top:10px">
+      <input id="ckCookie" placeholder="SESSDATA=...; bili_jct=..." style="flex:1;min-width:240px">
+      <input id="ckCsrf" placeholder="bili_jct（CSRF，可留空）" style="min-width:180px">
+      <button class="btn" onclick="saveCookie()">保存登录态</button>
+      <button class="mini" onclick="$('cookieCard').style.display='none'">关闭</button>
+    </div>
+    <div id="ckTip" class="hint" style="margin-top:8px"></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h2>账号运营 <span>选一个账号，展开四个运营动作</span></h2>
+    <div class="bar">
+      <select id="opAccount" onchange="selectOpAccount()" style="min-width:210px"></select>
+      <span id="opAccInfo" class="hint"></span>
+    </div>
+    <div class="seg" id="opSeg" style="margin:12px 0">
+      <button id="opDraft" class="on" onclick="setOp('draft')">草稿箱</button>
+      <button id="opHot" onclick="setOp('hot')">搜热点</button>
+      <button id="opCm" onclick="setOp('cm')">评论管理</button>
+      <button id="opAuto" onclick="setOp('auto')">自动回复</button>
+    </div>
+    <div id="opDraftBox"></div>
+    <div id="opHotBox" style="display:none"></div>
+    <div id="opCmBox" style="display:none"></div>
+    <div id="opAutoBox" style="display:none"></div>
+  </div>
+  <div class="card">
+    <h2>待发布清单 <span id="queueCount"></span></h2>
+    <div id="queueList" class="empty">暂无待发布作品</div>
+  </div>
+</div>
+
+<!-- ==================== 今日热点 / 脚本 / 设置 ==================== -->
+<div class="pane" id="pane-hot">
+  <div class="pagehead"><h1>今日热点</h1><p>7 源聚合，绿色为健身垂类命中；泛热点只作为发布引子，不硬蹭成视频主体。</p></div>
+  <div class="card"><div id="hotList"></div><div class="note" id="hotSrc"></div></div>
+</div>
+<div class="pane" id="pane-scripts">
+  <div class="pagehead"><h1>脚本与文案</h1><p>按任务查看生成的分镜脚本与完整发布文案。</p></div>
+  <div class="bar"><select id="runSelect" onchange="loadScripts()"></select>
+    <button class="mini" onclick="loadScripts()">刷新</button></div>
+  <div id="scriptList" class="empty">选中一次运行以查看脚本</div>
+</div>
+<div class="pane" id="pane-settings">
+  <div class="pagehead"><h1>平台设置</h1><p>品牌、垂类、视频参数与定时生成。改完点保存，下次生成生效。</p></div>
+  <div class="card"><div class="form" id="configForm"></div>
+    <div style="margin-top:16px"><button class="btn" onclick="saveSettings()">保存设置</button>
+      <span id="setTip" style="color:var(--muted);font-size:12px;margin-left:12px"></span></div></div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>当前执行的承诺口径 <span class="state" id="offerState">读取中</span></h2>
+    <p style="color:var(--muted);font-size:12px;line-height:1.75;margin:0 0 14px">
+      按「开头 / 钩子 / 内容 / 结尾」四结构位组织：换一套方案，整条文字生成链路（开头点名、钩子口径、内容阻力、结尾到店动作、发布文案 CTA）一起切换；也可以只改某一个结构位。
+      未获门店书面确认的价格、活动有效期、时长、「无推销」等具体承诺会被闸门拦下并回退到现行保守口径，不会流进成片。</p>
+    <div class="form"><div style="grid-column:1/-1"><label>当前承诺方案（下次生成生效）</label>
+      <select id="offerSelect" onchange="renderOfferConfirm(window.__offers)"></select></div></div>
+    <div id="offerMeta" style="font-size:12px;color:var(--muted);line-height:1.8;margin:12px 0"></div>
+    <table id="offerSlots" style="margin:10px 0"></table>
+    <div class="form" id="offerOverrides"></div>
+    <div style="margin-top:14px"><button class="btn" onclick="saveOffer()">切换并保存</button>
+      <button class="mini" style="margin-left:8px" onclick="clearOfferOverrides()">清空逐位覆盖</button>
+      <span id="offerTip" style="color:var(--muted);font-size:12px;margin-left:12px"></span></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>门店书面确认 <span class="state" id="offerConfirmState">读取中</span></h2>
+    <p style="color:var(--muted);font-size:12px;line-height:1.75;margin:0 0 14px">
+      含价格、活动有效期、时长、「无推销」等具体承诺的方案，须登记门店书面确认后才会放行。
+      四项要求（确认人 / 书面凭证 / 明确允许具体承诺 / 未来截止日）缺一不可；到期自动失效，撤销只追加一条记录、不删历史。
+      登记对象为上方下拉当前选中的方案。</p>
+    <div id="offerConfirmMeta" style="font-size:12px;color:var(--muted);line-height:1.9;margin-bottom:12px"></div>
+    <div class="form" id="offerConfirmForm">
+      <div><label>确认人（门店责任人）</label><input id="ocWho" placeholder="如：前浯店店长 张三"></div>
+      <div><label>书面凭证</label><input id="ocEvidence" placeholder="如：门店盖章《单次体验活动说明》/ 公示照片编号"></div>
+      <div><label>生效日（留空＝今天）</label><input id="ocFrom" type="date"></div>
+      <div><label>有效期截止（必填）</label><input id="ocUntil" type="date"></div>
+      <div style="grid-column:1/-1"><label><input type="checkbox" id="ocAllow" style="width:auto;margin-right:6px">门店已书面确认，允许在文案中使用具体承诺</label></div>
+      <div style="grid-column:1/-1"><label>备注（选填；撤销时作为原因）</label><input id="ocNote" placeholder="活动适用范围、门店公示位置等"></div>
+    </div>
+    <div style="margin-top:14px"><button class="btn" onclick="saveOfferConfirm()">登记书面确认</button>
+      <button class="mini" style="margin-left:8px" onclick="revokeOfferConfirm()">撤销确认</button>
+      <span id="ocTip" style="color:var(--muted);font-size:12px;margin-left:12px"></span></div>
+    <div id="offerConfirmLog" style="margin-top:16px"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ==================== 成片弹层 ==================== -->
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="mbox">
+    <video id="player" controls playsinline></video>
+    <div class="minfo">
+      <button class="close" onclick="closeModal()">关闭</button>
+      <h3 id="mTitle"></h3>
+      <div id="mMeta" style="color:var(--muted);font-size:12px;margin-bottom:13px"></div>
+      <div style="margin-bottom:10px">
+        <button class="mini" onclick="copyCaption()">复制发布文案</button>
+        <button class="mini" id="mDl">下载 MP4</button>
+        <button class="mini" id="mSrt">下载字幕</button>
+        <button class="mini" id="mCover">下载封面</button>
+      </div>
+      <div class="bar" style="margin:12px 0 4px">
+        <select id="queueAccount" style="min-width:170px"></select>
+        <button class="btn" onclick="addToQueue()">加入待发布清单</button>
+        <span id="queueTip" style="color:var(--muted);font-size:12px"></span>
+      </div>
+      <b style="font-size:12px;color:var(--gold)">发布文案</b><pre id="mCaption"></pre>
+      <b style="font-size:12px;color:var(--gold)">分镜脚本</b><div id="mScenes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 本机目录选择器 ==================== -->
+<div class="modal" id="dirModal" onclick="if(event.target===this)closeDirBrowser()">
+  <div class="dirbox">
+    <div class="dirhead">
+      <div style="flex:1">
+        <h3>选择本机素材文件夹</h3>
+        <p>浏览的是<b>运行控制台这台电脑</b>的目录。平台只读取文件夹名称，不读取、不复制、不上传里面的视频；确认后仅登记路径。</p>
+      </div>
+      <button class="close" style="float:none;flex:none" onclick="closeDirBrowser()">关闭</button>
+    </div>
+    <div class="dirbar">
+      <button class="mini" onclick="browseDir('')">⌂ 根目录</button>
+      <button class="mini" onclick="browseDir(window.__dirParent||'')">↑ 上一级</button>
+      <input type="text" id="dirCurrent" placeholder="也可直接粘贴完整路径后点「前往」">
+      <button class="mini" onclick="dirGoInput()">前往</button>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+        <input type="checkbox" id="dirAll" style="width:auto" onchange="browseDir(window.__dirPath||'')"> 显示系统目录</label>
+    </div>
+    <div class="dirchips" id="dirChips"></div>
+    <div class="dirlist" id="dirList"></div>
+    <div class="dirfoot">
+      <div class="note" id="dirInfo">选择目录后点「使用当前目录」</div>
+      <div style="display:flex;gap:8px;flex:none">
+        <button class="btn ghost" onclick="closeDirBrowser()">取消</button>
+        <button class="btn" id="dirUse" onclick="useCurrentDir()">使用当前目录</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let cfg=null, current=null, pollTimer=null, currentRunId=null, mode='prepare';
+const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function api(p,opt){const r=await fetch(p,opt);return r.json()}
+const J=(body)=>({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+
+/* ---------------- 白天 / 夜间主题 ---------------- */
+function themeNow(){return document.documentElement.getAttribute('data-theme')==='light'?'light':'dark'}
+function syncThemeBtn(){
+  const b=$('themeBtn'); if(!b)return;
+  const t=themeNow();
+  const tip=t==='dark'?'切换到白天模式（浅色）':'切换到夜间模式（深色）';
+  b.title=tip; b.setAttribute('aria-label',tip);
+  const m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',t==='light'?'#ffffff':'#0e131c');
+}
+function toggleTheme(){
+  const next=themeNow()==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  try{localStorage.setItem('gympulse-theme',next)}catch(e){}
+  try{
+    const u=new URL(location.href);
+    if(u.searchParams.has('theme')){
+      u.searchParams.delete('theme');
+      history.replaceState(null,'',u.pathname+u.search+u.hash);
+    }
+  }catch(e){}
+  syncThemeBtn();
+}
+/* 用户没手动选过时，跟随系统白天 / 夜间自动切换 */
+if(window.matchMedia){
+  const mq=window.matchMedia('(prefers-color-scheme: light)');
+  const onSys=e=>{
+    let chosen=null;try{chosen=localStorage.getItem('gympulse-theme')}catch(err){}
+    if(chosen||new URLSearchParams(location.search).has('theme'))return;
+    document.documentElement.setAttribute('data-theme',e.matches?'light':'dark');
+    syncThemeBtn();
+  };
+  if(mq.addEventListener)mq.addEventListener('change',onSys);
+  else if(mq.addListener)mq.addListener(onSys);
+}
+syncThemeBtn();
+
+/* ---------------- 左侧栏：展开 / 图标栏 ---------------- */
+function syncSideBtn(){
+  const mini=document.documentElement.classList.contains('side-mini');
+  const b=$('sideBtn'); if(!b)return;
+  b.setAttribute('aria-expanded',String(!mini));
+  b.title=mini?'展开左侧栏':'收起左侧栏（只留图标）';
+}
+function toggleSide(){
+  const mini=document.documentElement.classList.toggle('side-mini');
+  window.__sideManual=true;
+  try{localStorage.setItem('lynnvos-side',mini?'mini':'full')}catch(e){}
+  syncSideBtn();
+}
+/* 用户没手动选过时，窗口变窄自动收成图标栏，但绝不把侧栏挪到顶部 */
+window.addEventListener('resize',function(){
+  if(window.__sideManual)return;
+  document.documentElement.classList.toggle('side-mini',window.innerWidth<=1000);
+  syncSideBtn();
+});
+syncSideBtn();
+
+/* ---------------- 导航 ---------------- */
+const LOADERS={videos:()=>loadVideos(),hot:()=>loadHot(),scripts:()=>{fillSelect($('runSelect'),window.__runs);loadScripts()},
+  assets:()=>{loadAssets();loadFolders()},settings:()=>{renderConfig();loadOffers()},keys:()=>{loadKeys();loadGateway()},
+  edit:()=>{fillSelect($('planRunSelect'),window.__runs);loadPlan()},
+  voices:()=>loadVoices(),tasks:()=>loadTasks(),publish:()=>loadPublish(),transcribe:()=>loadTranscripts()};
+function nav(t){
+  if(!$('pane-'+t))return;
+  try{history.replaceState(null,'','?nav='+t)}catch(e){}
+  document.querySelectorAll('.navitem').forEach(b=>b.classList.toggle('active',b.dataset.nav===t));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('active',p.id==='pane-'+t));
+  window.__nav=t;
+  try{const f=LOADERS[t]; if(f)f()}catch(e){console.warn(e)}
+}
+function setMode(m){mode=m;$('modePrepare').classList.toggle('on',m==='prepare');$('modeAll').classList.toggle('on',m==='all')}
+
+async function refreshState(){
+  const s=await api('/api/state');
+  $('brandPill').textContent=s.config_brand;
+  $('kHot').textContent=s.hot.unique; $('kFit').textContent=s.hot.fitness;
+  $('kVid').textContent=s.videos.length; $('kAsset').textContent=s.video_assets;
+  $('bgAssets').textContent=s.video_assets; $('bgVideos').textContent=s.videos.length;
+  $('bgTasks').textContent=s.tasks_count; $('bgPublish').textContent=s.pending_publish;
+  const up=$('userPill');
+  if(s.multi_user){up.style.display='';up.textContent=(s.role==='admin'?'管理员 · ':'协作 · ')+s.user;
+    up.title=s.role==='admin'?'可管理密钥、品牌配置与素材库':'可生成、审核分镜与查看成片';}
+  else up.style.display='none';
+  const limited=s.multi_user&&s.role!=='admin';
+  const kn=document.querySelector('[data-nav="keys"]'); if(kn)kn.style.display=limited?'none':'';
+  $('dot').className='dot'+(s.running?' on':'');
+  $('statusTxt').textContent=s.running?'运行中':'空闲'+(s.error?' · 上轮失败':'');
+  $('runBtn').disabled=s.running; $('runBtn').textContent=s.running?'运行中...':'开始生成';
+  $('renderBtn').disabled=s.running;
+  window.__runs=s.runs||[]; window.__planReady=s.plan_ready;
+  fillSelect($('runSelect'),s.runs); fillSelect($('planRunSelect'),s.runs);
+  renderHot(s.hot.top); loadVideos(s.videos);
+  if(s.running&&s.run_id){currentRunId=s.run_id;startPoll()}
+  if(s.error)$('note').textContent='上轮错误：'+s.error;
+  cfg=await api('/api/config');
+  return s;
+}
+
+/* ---------------- 热点 / 脚本 ---------------- */
+function renderHot(rows){
+  const el=$('hotList'); if(!el)return;
+  if(!rows||!rows.length){el.innerHTML='<div class="empty">暂无热点数据，点「开始生成」采集</div>';return}
+  el.innerHTML=rows.slice(0,20).map((r,i)=>
+    `<div class="hotrow ${r.keyword_hits&&r.keyword_hits.length?'fit':''}">
+      <span class="rk">${i+1}</span><span class="tt" title="${esc(r.title)}">${esc(r.title)}</span>
+      <span class="pf">${esc(r.platform)} · ${r.score}</span></div>`).join('');
+}
+async function loadHot(){
+  const h=await api('/api/hot'); renderHot(h.top);
+  const src=h.sources||{};
+  $('hotSrc').textContent='数据源：'+Object.entries(src).map(([k,v])=>
+    `${k} ${v.ok?v.count+'条':'失败'}`).join('  |  ')+'  （绿色为健身相关）';
+}
+async function loadScripts(){
+  const rid=$('runSelect').value; if(!rid){$('scriptList').innerHTML='<div class="empty">暂无运行记录</div>';return}
+  const ss=await api('/api/scripts?run_id='+encodeURIComponent(rid));
+  $('scriptList').innerHTML=ss.length?ss.map((s,i)=>`<div class="card" style="background:var(--panel2);margin-bottom:12px">
+    <h2>脚本 ${i+1}：${esc(s.title)} <span>${esc(s.generator)}</span></h2>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:9px">封面大字：${esc(s.cover_text)} · 合规改写 ${(s.compliance&&s.compliance.local_hits)||0} 处</div>
+    ${s.scenes.map(x=>`<div class="sc"><b>分镜 ${x.index} · ${esc(x.on_screen)}</b><br>${esc(x.narration)}</div>`).join('')}
+    <pre style="white-space:pre-wrap;color:var(--pre-text);font-size:12px;line-height:1.8">${esc(s.caption)}</pre>
+  </div>`).join(''):'<div class="empty">该次运行未产出脚本</div>';
+}
+
+/* ---------------- 作品库 ---------------- */
+function loadVideos(list){
+  const el=$('videoGrid'); if(!el)return;
+  const run=async()=>{
+    const vids=list||await api('/api/videos'); window.__vids=vids;
+    if(!vids.length){el.innerHTML='<div class="empty">还没有成片。到创作台运行一次「出方案待审核」→ 镜剪辑 → 渲染。</div>';return}
+    el.innerHTML=vids.map((v,i)=>`<div class="vcard" onclick="openVideo(${i})">
+      <img src="${v._cover_url}" alt="封面">
+      <div class="body"><h3>${esc(v.title)}</h3>
+      <p><span class="tag ${v.material_mode==='real_video'?'g':''}">${v.material_mode==='real_video'?'实拍剪辑':'卡片画面'}</span>
+      <span class="tag b">${esc(v.resolution)}</span><span>${v.duration}s</span><span>${v.size_mb}MB</span></p></div></div>`).join('');
+    const h=vids[0], hv=$('heroVideo');
+    if(hv.getAttribute('src')!==h._mp4_url){hv.src=h._mp4_url;hv.poster=h._cover_url}
+    $('heroTitle').textContent=h.title;
+    $('heroMeta').innerHTML=`<span>${esc(h.resolution)}</span><span>${h.duration}s</span><span>${h.size_mb}MB</span>
+      <span class="tag ${h.material_mode==='real_video'?'g':''}">${h.material_mode==='real_video'?'实拍剪辑':'卡片画面'}</span>`;
+  };run();
+}
+function openVideo(i){
+  const v=window.__vids[i]; if(!v)return; current=v;
+  $('mTitle').textContent=v.title;
+  $('mMeta').textContent=`${v.resolution} · ${v.duration}s · ${v.size_mb}MB · ${v.material_mode==='real_video'?'真实实拍剪辑':'静态卡片'} · 脚本 ${v.generator||'template'}`;
+  $('mCaption').textContent=v.caption||'';
+  $('mScenes').innerHTML=(v.scenes||[]).map(s=>
+    `<div class="sc"><b>分镜 ${s.index} · ${esc(s.on_screen)}</b><br>${esc(s.narration)}</div>`).join('');
+  $('player').src=v._mp4_url;
+  $('mDl').onclick=()=>window.open(v._mp4_url);
+  $('mSrt').onclick=()=>window.open(v._srt_url);
+  $('mCover').onclick=()=>window.open(v._cover_url);
+  fillQueueAccounts(); $('queueTip').textContent='';
+  $('modal').classList.add('show'); $('player').play().catch(()=>{});
+}
+function closeModal(){$('modal').classList.remove('show');$('player').pause()}
+function copyCaption(){navigator.clipboard.writeText(current.caption||'').then(()=>alert('发布文案已复制'))}
+
+/* ---------------- 本机目录选择器 ---------------- */
+window.__dirPath=''; window.__dirParent='';
+function openDirBrowser(p){ $('dirModal').classList.add('show'); browseDir(p||window.__dirPath||''); }
+function closeDirBrowser(){ $('dirModal').classList.remove('show'); }
+function dirGoInput(){ browseDir($('dirCurrent').value.trim()); }
+async function browseDir(p){
+  const all=$('dirAll').checked?1:0;
+  $('dirList').innerHTML='<div class="empty">正在读取本机目录...</div>';
+  let d;
+  try{ d=await api('/api/local/browse?path='+encodeURIComponent(p||'')+'&all='+all); }
+  catch(e){ $('dirList').innerHTML='<div class="empty" style="color:var(--err)">读取失败：'+esc(String(e))+'</div>'; return; }
+  if(d.ok===false){
+    $('dirList').innerHTML='<div class="empty" style="color:var(--err)">'+esc(d.error||'目录不可读')+'</div>';
+    $('dirInfo').textContent='可点「根目录」重新选择，或在上方粘贴正确的完整路径';
+    $('dirUse').disabled=true; $('dirUse').style.opacity='.45';
+    return;
+  }
+  window.__dirPath=d.path||''; window.__dirParent=d.parent||'';
+  $('dirCurrent').value=d.path||'';
+  $('dirCurrent').title=d.path||'根目录';
+  const chip=(x,icon)=>`<button class="mini" data-p="${esc(x.path)}" onclick="browseDir(this.dataset.p)">${icon} ${esc(x.name)}</button>`;
+  $('dirChips').innerHTML=(d.drives||[]).map(x=>chip(x,'▣')).join('')
+    +(d.shortcuts||[]).map(x=>chip(x,'⌂')).join('');
+  const row=(x,label)=>`<div class="drow" data-p="${esc(x.path)}" onclick="browseDir(this.dataset.p)"><span class="di">▣</span><span class="dn">${esc(x.name)}</span><span class="dv">${esc(label)}</span></div>`;
+  const rows=[];
+  if(d.root){
+    rows.push('<div class="empty" style="text-align:left;padding:6px 2px">选择一个磁盘或常用位置开始浏览，再逐级点进素材所在的文件夹。</div>');
+    (d.drives||[]).forEach(x=>rows.push(row(x,x.path)));
+  }else{
+    (d.dirs||[]).forEach(x=>rows.push(row(x,'进入 ›')));
+    if(!(d.dirs||[]).length)rows.push('<div class="empty" style="text-align:left;padding:6px 2px">此目录没有子文件夹，可直接点「使用当前目录」。</div>');
+  }
+  $('dirList').innerHTML=rows.join('');
+  const info=[];
+  if(d.root)info.push('根目录 · 选择磁盘或常用位置');
+  else{
+    info.push('当前：'+(d.path.split(/[\\/]/).filter(Boolean).pop()||d.path));
+    info.push(`${(d.dirs||[]).length} 个子文件夹`);
+    if(d.media)info.push(`直属 ${d.media} 个视频/图片`);
+    if(d.hidden)info.push(`已隐藏 ${d.hidden} 个系统目录`);
+    if(d.truncated)info.push('只显示前 400 项');
+    if(d.error)info.push(d.error);
+    if(!d.selectable)info.push('不可登记：'+d.reason);
+  }
+  $('dirInfo').textContent=info.join(' · ');
+  const btn=$('dirUse');
+  btn.disabled=!d.selectable;
+  btn.style.opacity=d.selectable?'1':'.45';
+  btn.title=d.selectable?'登记当前路径（原文件不改动）':(d.reason||'请进入一个具体文件夹');
+}
+async function useCurrentDir(){
+  const p=window.__dirPath; if(!p)return;
+  $('folderPath').value=p;
+  closeDirBrowser();
+  await addLocalFolder();
+}
+
+/* ---------------- 素材：本机文件夹直连 ---------------- */
+async function loadFolders(keepTip){
+  const d=await api('/api/local/folders');
+  window.__folders=d.folders||[];
+  const badge=$('localBadge');
+  $('localOnly').checked=!!d.local_only;
+  badge.textContent=d.local_only?'纯本地 · 零上传':'允许联网素材';
+  badge.className='state '+(d.local_only?'ok':'');
+  const fs=window.__folders;
+  $('folderList').innerHTML=fs.length
+    ? '<div class="mgrid">'+fs.map((f,i)=>`
+      <div class="mcard foldercard"><div class="mi">
+        <b title="${esc(f.path)}">${esc(f.path)}</b>
+        <span class="meta">${f.exists?'<span style="color:var(--ok)">已连接</span>':'<span style="color:var(--warn)">目录不可达</span>'}
+          · ${f.videos} 条视频 / ${f.count} 个文件 · 原文件保持原位</span>
+        <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">
+          <button class="mini" onclick="copyFolderPath(${i})">复制路径</button>
+          <button class="mini" onclick="removeLocalFolder(${i})">移除登记</button>
+        </div>
+      </div></div>`).join('')+'</div>'
+    : '<div class="empty">尚未登记本机文件夹。点「浏览本机目录…」逐级选择门店实拍所在目录，或直接粘贴完整路径，无需上传。</div>';
+  if(!keepTip)$('localTip').textContent=`已索引 ${d.count||0} 个文件 / ${d.videos||0} 条视频`;
+}
+function copyFolderPath(i){
+  const p=(window.__folders[i]||{}).path||'';
+  if(navigator.clipboard)navigator.clipboard.writeText(p).then(
+    ()=>{$('localTip').textContent='路径已复制：'+p},
+    ()=>{$('localTip').textContent=p});
+  else $('localTip').textContent=p;
+}
+async function addLocalFolder(){
+  const p=$('folderPath').value.trim();
+  if(!p){$('localTip').textContent='请先填写本机文件夹完整路径';return}
+  $('localTip').textContent='正在登记并扫描（只读取文件信息，不复制、不上传）...';
+  const r=await api('/api/local/folders',J({action:'add',path:p}));
+  $('localTip').textContent=r.ok
+    ? `已登记并索引 ${r.count} 个文件，原文件未改动${r.error?' · '+r.error:''}`
+    : '失败：'+(r.error||'未知错误');
+  if(r.ok)$('folderPath').value='';
+  await loadFolders(true); await loadAssets(); refreshState();
+}
+async function removeLocalFolder(i){
+  const p=(window.__folders[i]||{}).path||'';
+  const r=await api('/api/local/folders',J({action:'remove',path:p}));
+  $('localTip').textContent=r.ok?'已移除登记（原文件未删除）':'失败：'+(r.error||'未知错误');
+  await loadFolders(true); await loadAssets(); refreshState();
+}
+async function scanLocalFolders(){
+  $('localTip').textContent='正在重新扫描本机文件夹...';
+  const r=await api('/api/local/folders',J({action:'scan'}));
+  $('localTip').textContent=`扫描完成：${r.count} 个文件 / ${r.videos} 条视频`;
+  await loadFolders(true); await loadAssets(); refreshState();
+}
+async function setLocalMode(){
+  const r=await api('/api/local/folders',J({action:'mode',enabled:$('localOnly').checked}));
+  $('localTip').textContent=r.local_only?'纯本地模式已开启：禁止联网下载 / 检索素材':'已关闭纯本地模式：联网素材入口可用';
+  await loadFolders(true);
+}
+async function loadAssets(){
+  const d=await api('/api/materials');
+  $('licenseNote').textContent=d.license||'';
+  const items=d.items||[];
+  if(!items.length){$('assetList').innerHTML='<div class="empty">素材库为空。在上方登记一个本机文件夹，或展开「可选」区复制到项目库。</div>';return}
+  $('assetList').innerHTML='<div class="mgrid">'+items.map(m=>{
+    const url=m.url||('/media/assets/gym/'+encodeURIComponent(m.name));
+    const media=m.kind==='video'
+      ? `<video src="${url}#t=0.1" poster="${m.thumb||url}" muted preload="metadata" playsinline onmouseover="this.play().catch(()=>{})" onmouseout="this.pause()"></video>`
+      : `<img src="${url}" style="width:100%;height:175px;object-fit:cover;display:block">`;
+    return `<div class="mcard">${media}<div class="mi"><b>${esc(m.label||m.name)}</b>
+      <span>${esc(m.origin)}${m.external?' · <b style="color:var(--ok)">本地直连</b>':''} · ${esc(m.orientation)} · ${m.duration}s · ${m.size_mb}MB</span>
+      <div>${(m.tags||[]).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>
+      <div style="margin-top:7px"><button class="mini" onclick="window.open('${url}')">预览原片</button></div>
+      </div></div>`;
+  }).join('')+'</div>';
+}
+async function uploadFiles(){
+  const fs=[...$('fileInput').files]; if(!fs.length){$('upTip').textContent='请先选择文件';return}
+  for(const f of fs){
+    if(f.size>80*1024*1024){$('upTip').textContent=f.name+' 超过 80MB，已跳过';continue}
+    const data=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)});
+    const r=await api('/api/upload',J({name:f.name,data}));
+    $('upTip').textContent=r.ok?`已复制到项目库 ${f.name} (${(r.size/1024/1024).toFixed(1)}MB)`:'失败：'+r.error;
+  }
+  await loadAssets(); refreshState();
+}
+async function fetchDemo(){
+  $('upTip').textContent='正在下载并转码演示实拍素材（约 20 秒）...';
+  const r=await api('/api/materials/demo',J({}));
+  $('upTip').textContent=r.error||`演示素材入库 ${r.ok} 条${r.failed&&r.failed.length?'，失败 '+r.failed.length+' 条':''}`;
+  await loadAssets(); refreshState();
+}
+async function pexelsSearch(){
+  const q=$('pexelsQuery').value.trim()||'gym workout';
+  $('upTip').textContent='正在检索 Pexels...';
+  const r=await api('/api/materials/pexels',J({query:q,count:4}));
+  $('upTip').textContent=r.error||(r.ok?`入库 ${r.ok} 条：${r.files.join('、')}`:'未拿到可用视频，试试别的英文关键词');
+  await loadAssets(); refreshState();
+}
+
+/* ---------------- 免费模型通道（喜鹊 / 其它 OpenAI 兼容开源网关） ---------------- */
+async function loadGateway(force){
+  const d=await api('/api/gateway'+(force?'?force=1':''));
+  window.__gw=d;
+  $('gwBase').value=d.base_url||'';
+  $('gwModel').value=d.model_cfg||'';
+  $('gwKey').value='';
+  $('gwKey').placeholder=d.api_key_set?'已设置（留空表示不修改）':'留空（本机网关通常不需要）';
+  $('gwEnabled').checked=!!d.enabled;
+  const ok=!!d.selected, badge=$('gwState');
+  badge.textContent=!d.online?'网关离线':(ok?'可用 · 零密钥':'在线，暂无可用模型');
+  badge.style.color=ok?'var(--ok)':'var(--warn)';
+  const usable=(d.probed||[]).filter(x=>x.ok).map(x=>x.model);
+  $('gwInfo').innerHTML=
+    `模型目录 <b>${(d.models||[]).length}</b> 个，免费标记 <b>${(d.free||[]).length}</b> 个；`+
+    `实测可用 <b>${usable.length}</b> 个${usable.length?'：'+usable.slice(0,4).map(esc).join('、'):''}。<br>`+
+    `当前脚本模型：<b>${esc(d.selected||'未选中，将使用内置模板')}</b>。`+
+    (d.error?'<br><span style="color:var(--warn)">'+esc(d.error)+'</span>':'')+
+    (d.stale?'<br><span style="color:var(--warn)">'+esc(d.last_error||'沿用上次可用结论')+'</span>':'')+
+    `<br>环境变量中检测到 <b>${d.env?d.env.detected:0}</b> 个 AI 服务商 Key，当前`+
+    `<b>${d.env&&d.env.enabled?'已允许':'已禁用（零密钥默认）'}</b>；脚本生成完全不依赖它们。`;
+  if(force)$('gwTip').textContent=ok?'检测完成，已自动选中 '+d.selected:'检测完成：'+(d.error||'无可用模型');
+  return d;
+}
+async function testGateway(){
+  $('gwTip').textContent='测试中…';
+  const r=await api('/api/gateway/test',J({model:$('gwModel').value.trim()}));
+  $('gwTip').textContent=(r.ok?'✓ ':'✗ ')+r.detail+(r.model?' · '+r.model:'');
+}
+async function saveGateway(){
+  const body={enabled:$('gwEnabled').checked,base_url:$('gwBase').value.trim(),
+    model:$('gwModel').value.trim(),prefer_free:true,api_key:$('gwKey').value.trim()};
+  const r=await api('/api/gateway/set',J(body));
+  if(!r.ok){$('gwTip').textContent='保存失败：'+(r.error||'');return}
+  $('gwTip').textContent='已保存，正在重新检测…';
+  await loadGateway(1); refreshState();
+}
+
+/* ---------------- 账号管理（可选自有 API Key） ---------------- */
+async function loadKeys(){
+  const rows=await api('/api/secrets'); const st=await api('/api/state');
+  $('allowEnv').checked=!!st.allow_env; window.__keys=rows; window.__allowEnv=!!st.allow_env;
+  $('envHint').innerHTML=`检测到系统环境变量中有 <b>${st.env_detected||0}</b> 个 AI 服务商 Key，`+
+    `当前<b>${st.allow_env?'已允许读取':'已禁用（默认）'}</b>。平台不会自动使用它们；`+
+    `这里填的 Key 只保存在本机 <code>data/secrets.json</code>，不写进配置、日志或成片元数据。`;
+  $('keyGrid').innerHTML=rows.map((k,i)=>`
+    <div class="keycard">
+      <h3>${esc(k.name)} <span class="state ${k.configured?'ok':''}">${esc(k.source)}</span></h3>
+      <div class="usage">${esc(k.usage)}${k.hint?'<br><span style="color:var(--warn)">'+esc(k.hint)+'</span>':''}
+        ${k.masked?'<br>当前：'+esc(k.masked):''}
+        ${(k.env_present&&!window.__allowEnv)?'<br><span style="color:var(--warn)">环境变量里有同名 Key，已默认禁用</span>':''}
+        · <a href="${esc(k.apply)}" target="_blank" style="color:var(--blue)">申请 Key ↗</a></div>
+      <input type="password" data-ki="${i}" data-kk="${esc(k.key)}" placeholder="填入新 Key（留空表示不修改）" autocomplete="off">
+      ${k.need_model?`<input data-mi="${i}" data-km="${esc(k.provider)}" value="${esc(k.model||'')}" placeholder="模型 ID / 接入点（留空用默认）">`:''}
+      <div class="row"><button class="mini" onclick="testKey(${i})">测试连通</button>
+        <button class="mini" onclick="clearKey(${i})">清除</button></div>
+      <div class="testmsg" id="kt${i}"></div>
+    </div>`).join('');
+}
+async function testKey(i){
+  const k=window.__keys[i]; const el=$('kt'+i); el.textContent='测试中...';
+  const keyEl=document.querySelector(`[data-ki="${i}"]`);
+  const modelEl=document.querySelector(`[data-mi="${i}"]`);
+  const typed=keyEl&&keyEl.value.trim();
+  if(typed){await api('/api/secrets',J({keys:{[k.key]:typed},models:modelEl?{[k.provider]:modelEl.value}:{}}))}
+  const r=await api('/api/secrets/test',J({key:k.key,model:modelEl?modelEl.value:''}));
+  el.textContent=(r.ok?'✓ ':'✗ ')+r.detail; el.style.color=r.ok?'var(--ok)':'var(--err)';
+}
+async function clearKey(i){
+  await api('/api/secrets',J({clear:[window.__keys[i].key]}));
+  $('kt'+i).textContent='已清除；环境变量中的 Key 默认不会回退使用'; loadKeys();
+}
+async function saveKeys(){
+  const keys={},models={};
+  document.querySelectorAll('#keyGrid [data-kk]').forEach(el=>{if(el.value.trim())keys[el.dataset.kk]=el.value.trim()});
+  document.querySelectorAll('#keyGrid [data-km]').forEach(el=>{models[el.dataset.km]=el.value.trim()});
+  const r=await api('/api/secrets',J({keys,models,allow_env:$('allowEnv').checked}));
+  $('keyTip').textContent=r.ok?'已保存到本机，模型探测缓存已刷新':'保存失败：'+r.error;
+  loadKeys(); refreshState();
+}
+
+/* ---------------- 音色管理（零密钥优先） ---------------- */
+async function loadVoices(){
+  const d=await api('/api/voices');
+  window.__voiceCurrent=d.current;
+  $('voiceSpeed').value=d.speed;
+  if(!$('voiceText').value)$('voiceText').value=d.preview_text||'';
+  const z=$('voiceZeroKey');
+  z.textContent=d.offline_ready?'零密钥 · 含完全离线档':(d.zero_key?'零密钥可用':'需先配置引擎');
+  z.className='state '+(d.zero_key?'ok':'');
+  $('engineList').innerHTML=(d.engines||[]).map(e=>`
+    <div class="enginecard ${e.available?'on':''}">
+      <b>${e.offline?'<span style="color:var(--ok)">离线 · 断网可用</span>':'<span style="color:var(--ok)">免费 · 需联网</span>'} · ${esc(e.name)}</b>
+      <span>${esc(e.detail)}</span>
+    </div>`).join('');
+  $('voiceNote').textContent=d.note||'';
+  const list=d.voices||[]; list.forEach((v,i)=>v._i=i);
+  const groups={}; list.forEach(v=>{(groups[v.group] ||= []).push(v)});
+  $('voiceGrid').innerHTML=Object.entries(groups).map(([g,items])=>`
+    <div class="grouphead"><b>${esc(g)}</b><span>${items.length} 个音色</span></div>
+    <div class="grid">${items.map(v=>`
+      <div class="voicecard ${v.current?'cur':''} ${v.available?'':'off'}" id="vc${v._i}">
+        <h3>${esc(v.name)} ${v.current?'<span class="tag g">当前默认</span>':''}
+          <span class="tag g">${v.offline?'离线':'免费'}</span></h3>
+        <div class="vmeta">${esc(v.gender)} · ${esc(v.locale)} · ${esc(v.style)}<br>适用：${esc(v.use)}<br>
+          <code>${esc(v.id)}</code>
+          ${v.available?'':'<br><span style="color:var(--warn)">'+esc(v.reason)+'</span>'}</div>
+        <button class="mini" ${v.available?'':'disabled'} data-ref="${esc(v.ref)}" onclick="previewVoice(this.dataset.ref,${v._i})">▶ 试听</button>
+        <button class="mini" ${v.available?'':'disabled'} data-ref="${esc(v.ref)}" onclick="setVoice(this.dataset.ref)">设为默认</button>
+        <div class="testmsg" id="vm${v._i}"></div>
+        <audio id="va${v._i}" controls style="display:none"></audio>
+      </div>`).join('')}</div>`).join('');
+}
+async function previewVoice(ref,i){
+  const msg=$('vm'+i); msg.textContent='正在合成试听音频（首次约 2 秒，之后命中缓存）...'; msg.style.color='var(--warn)';
+  const r=await api('/api/voices/preview',J({ref,text:$('voiceText').value,speed:Number($('voiceSpeed').value)||1}));
+  if(!r.ok){msg.textContent='✗ '+(r.error||'合成失败或无权操作');msg.style.color='var(--err)';return}
+  const a=$('va'+i); a.src=r.url+'?t='+Date.now(); a.style.display='block';
+  msg.textContent=(r.cached?'✓ 命中缓存':'✓ 合成成功')+'，点下方播放器试听'; msg.style.color='var(--ok)';
+  a.play().catch(()=>{});
+}
+async function setVoice(ref){
+  const r=await api('/api/voices/set',J({ref,speed:Number($('voiceSpeed').value)||1}));
+  $('voiceTip').textContent=r.ok?`已设为默认：${ref}（下条成片生效）`:'失败：'+(r.error||'无权操作');
+  if(r.ok)loadVoices();
+}
+async function saveVoiceSpeed(){
+  const r=await api('/api/voices/set',J({ref:window.__voiceCurrent,speed:Number($('voiceSpeed').value)||1}));
+  $('voiceTip').textContent=r.ok?'语速已保存（试听与成片同步生效）':'失败：'+(r.error||'无权操作');
+}
+async function refreshVoices(){
+  $('voiceTip').textContent='正在重新检测引擎与音色目录...';
+  await api('/api/voices?refresh=1');
+  await loadVoices();
+  $('voiceTip').textContent='引擎检测完成';
+}
+
+/* ---------------- 逐字稿（本地语音转文字） ---------------- */
+let __tPoll = null;
+function setTsrc(m){
+  const map = {upload:"tsrcUploadBox", path:"tsrcPathBox", lib:"tsrcLibBox"};
+  const btn = {upload:"tsrcUpload", path:"tsrcPath", lib:"tsrcLib"};
+  Object.keys(map).forEach(x=>{
+    $(map[x]).style.display = x===m ? "" : "none";
+    $(btn[x]).classList.toggle("on", x===m);
+  });
+  if(m==="lib") fillTsrcLib();
+}
+async function loadTranscripts(){
+  const d = await api("/api/transcripts");
+  const ms = $("tfModel");
+  ms.innerHTML = (d.models||[]).map(mm=>`<option value="${mm.id}">${mm.id}${mm.ready?"":"（首次下载）"}</option>`).join("");
+  if(!ms.value) ms.value = "base";
+  const items = d.items||[];
+  $("tHistory").innerHTML = items.length ? items.map(it=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.source||it.id)}</span>
+      <span class="hint">${esc(it.model||"")} · ${esc(it.language||"")} · ${it.segment_count}段</span>
+      <button class="mini" onclick="editScript('${esc(it.id)}',false)">转为脚本</button>
+    </div>`).join("") : "暂无";
+  try{
+    const ss = await api("/api/transcript-scripts");
+    const list = ss.items||[];
+    $("tScriptList").innerHTML = list.length
+      ? "已保存脚本：" + list.map(s=>`<a href="javascript:void(0)" onclick="editScript('${esc(s.id)}',false)" style="margin-right:12px">${esc(s.title||s.id)}（${s.scenes}镜）</a>`).join("")
+      : "尚无由逐字稿转出的分镜脚本";
+  }catch(e){ $("tScriptList").textContent=""; }
+}
+async function fillTsrcLib(){
+  const d = await api("/api/materials");
+  const vids = (d.items||[]).filter(x=>x.kind==="video");
+  $("tfLib").innerHTML = vids.length
+    ? vids.map(x=>`<option value="${esc(x.path)}">${esc(x.path)}</option>`).join("")
+    : '<option value="">素材库暂无视频</option>';
+}
+function _readFileB64(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});
+}
+async function startTranscribe(){
+  $("tfMsg").textContent = "准备中…"; $("tfMsg").style.color = "var(--warn)";
+  let body = {model_size: $("tfModel").value, language: $("tfLang").value};
+  const active = $("tSeg").querySelector("button.on").id;
+  if(active==="tsrcUpload"){
+    const f = $("tfFile").files[0];
+    if(!f){ $("tfMsg").textContent="请先选一个视频/音频文件"; $("tfMsg").style.color="var(--err)"; return; }
+    body.name = f.name; body.data = await _readFileB64(f);
+  } else if(active==="tsrcPath"){
+    const p = $("tfPath").value.trim();
+    if(!p){ $("tfMsg").textContent="请填写本机文件绝对路径"; $("tfMsg").style.color="var(--err)"; return; }
+    body.path = p;
+  } else {
+    const p = $("tfLib").value;
+    if(!p){ $("tfMsg").textContent="素材库暂无可选视频"; $("tfMsg").style.color="var(--err)"; return; }
+    body.path = p;
+  }
+  const r = await api("/api/transcribe", J(body));
+  if(!r.ok){ $("tfMsg").textContent="✗ "+(r.error||"启动失败"); $("tfMsg").style.color="var(--err)"; return; }
+  $("tfMsg").textContent = "转写中（CPU 本地运行，进度实时刷新）…";
+  pollTranscribe();
+}
+function pollTranscribe(){
+  if(__tPoll) clearInterval(__tPoll);
+  __tPoll = setInterval(async ()=>{
+    const s = await api("/api/transcribe/status");
+    if(s.running){ $("tfMsg").textContent = "转写中…"; return; }
+    clearInterval(__tPoll); __tPoll = null;
+    const r = s.result||{};
+    if(!r.ok){ $("tfMsg").textContent="✗ "+(r.error||s.error||"转写失败"); $("tfMsg").style.color="var(--err)"; return; }
+    $("tfMsg").textContent = "✓ 完成"; $("tfMsg").style.color = "var(--ok)";
+    renderTranscript(r);
+    loadTranscripts();
+  }, 1500);
+}
+function fmtTs(t){
+  const s = Math.floor(t), m = Math.floor(s/60);
+  return `${String(m).padStart(2,"0")}:${String(s%60).padStart(2,"0")}.${String(Math.floor((t%1)*10))}`;
+}
+function renderTranscript(r){
+  $("tResultCard").style.display = "";
+  $("tMeta").textContent = `模型 ${r.model} · 语言 ${r.language} · ${r.segment_count}段 · ${r.duration}s`;
+  $("tSegs").innerHTML = (r.segments||[]).map(s=>`
+    <div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)">
+      <span style="color:var(--accent);font-variant-numeric:tabular-nums;min-width:62px">${fmtTs(s.start)}</span>
+      <span style="flex:1">${esc(s.text)}</span></div>`).join("");
+  $("dlTxt").href = (r.files&&r.files.txt)||"#";
+  $("dlSrt").href = (r.files&&r.files.srt)||"#";
+  window.__tText = r.text||"";
+}
+function copyTranscript(){
+  navigator.clipboard && navigator.clipboard.writeText(window.__tText||"");
+  $("tfMsg").textContent = "✓ 已复制全文到剪贴板";
+}
+
+/* ---- 逐字稿 → 分镜脚本（可编辑 / 可保存 / 可导出） ---- */
+let __script = null;
+async function editScript(id, forceRegen){
+  if(!id) return;
+  let s = null;
+  if(!forceRegen){
+    const d = await api("/api/transcript-scripts?id="+encodeURIComponent(id));
+    if(d && d.scenes) s = d;
+  }
+  if(!s){
+    const per = Number(($("tsPer")&&$("tsPer").value)||2);
+    const r = await api("/api/transcribe/to-script", J({id, scenes_per:per}));
+    if(!r.ok){ $("tfMsg").textContent="✗ 转脚本失败："+(r.error||""); return; }
+    s = r.script;
+  }
+  __script = s; window.__scriptId = id;
+  $("tScriptCard").style.display = "";
+  $("tsMeta").textContent = `来源 ${s.source||id} · ${(s.scenes||[]).length} 镜`;
+  $("tsTip").textContent = "";
+  renderScriptScenes();
+  $("tScriptCard").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function regenScript(){ if(window.__scriptId) editScript(window.__scriptId, true); }
+function renderScriptScenes(){
+  const s = __script; if(!s) return;
+  $("tsScenes").innerHTML = (s.scenes||[]).map((x,i)=>`
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)">
+      <span style="min-width:50px;color:var(--accent);font-variant-numeric:tabular-nums">镜 ${i+1}</span>
+      <textarea data-si="${i}" data-sf="text" style="flex:1;min-height:52px" placeholder="这一镜的口播文案">${esc(x.text||"")}</textarea>
+      <div style="min-width:88px"><label style="font-size:11px;color:var(--muted)">时长(秒)</label>
+        <input type="number" step="0.5" min="1" max="120" data-si="${i}" data-sf="duration" value="${Number(x.duration)||3}" style="width:100%"></div>
+      <button class="mini" onclick="delScriptScene(${i})">删</button>
+    </div>`).join("") || '<div class="empty">暂无分镜，点下方「添加一镜」</div>';
+}
+function collectScriptScenes(){
+  if(!__script) return;
+  document.querySelectorAll("#tsScenes [data-si]").forEach(el=>{
+    const i = Number(el.dataset.si);
+    if(__script.scenes[i]) __script.scenes[i][el.dataset.sf] =
+      el.dataset.sf==="duration" ? Number(el.value) : el.value;
+  });
+}
+function addScriptScene(){ collectScriptScenes(); if(__script) __script.scenes.push({index:__script.scenes.length+1,text:"",duration:3}); renderScriptScenes(); }
+function delScriptScene(i){ collectScriptScenes(); if(!__script)return; __script.scenes.splice(i,1); __script.scenes.forEach((x,k)=>x.index=k+1); renderScriptScenes(); }
+async function saveScriptEdit(){
+  collectScriptScenes(); if(!__script)return;
+  const r = await api("/api/script/save", J({id:window.__scriptId, script:__script}));
+  $("tsTip").textContent = r.ok ? "✓ 已保存到本机 data/scripts" : "保存失败："+(r.error||"");
+  if(r.ok){ __script = r.script; loadTranscripts(); }
+}
+function copyScriptText(){
+  collectScriptScenes(); if(!__script)return;
+  const t = (__script.scenes||[]).map((x,i)=>`镜${i+1}（${x.duration}s）${x.text}`).join("\n");
+  navigator.clipboard && navigator.clipboard.writeText(t);
+  $("tsTip").textContent = "✓ 已复制脚本全文";
+}
+function downloadScriptJson(){
+  collectScriptScenes(); if(!__script)return;
+  const blob = new Blob([JSON.stringify(__script,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = (__script.title||"script")+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ---------------- 镜剪辑（时间线） ---------------- */
+function sourceUrl(p){
+  if(!p)return '';
+  return '/media/assets/gym/'+encodeURIComponent(String(p).split(/[\\/]/).pop());
+}
+async function loadPlan(){
+  const rid=$('planRunSelect').value||currentRunId;
+  if(!rid){$('timeline').innerHTML='';$('editPanel').innerHTML='<div class="empty">请先运行一次「出方案待审核」</div>';return}
+  const p=await api('/api/plan?run_id='+encodeURIComponent(rid));
+  if(p.error){$('timeline').innerHTML='';$('editPanel').innerHTML='<div class="empty">'+esc(p.error)+'</div>';return}
+  window.__plan=p; window.__planRunId=rid; window.__sel=0;
+  $('planTip').textContent=`方案 ${rid} · ${p.material_mode==='real_video'?'真实实拍':'静态卡片'} · ${esc(p.status||'prepared')}`;
+  renderTimeline(); renderEditPanel();
+}
+function renderTimeline(){
+  const p=window.__plan;
+  $('timeline').innerHTML=(p.clips||[]).map((c,i)=>{
+    const s=(p.script.scenes||[])[i]||{};
+    return `<div class="tlcard ${i===window.__sel?'sel':''}" onclick="selectClip(${i})">
+      <video src="${sourceUrl(c.source)}" muted preload="metadata" playsinline></video>
+      <div class="ti"><b>分镜 ${c.index}</b>
+        <span>${esc(s.on_screen||'')}</span><br><em>${esc(c.label||'未选择')}</em></div>
+    </div>`;
+  }).join('');
+}
+function selectClip(i){
+  window.__sel=i;
+  document.querySelectorAll('.tlcard').forEach((e,n)=>e.classList.toggle('sel',n===i));
+  const v=document.querySelectorAll('.tlcard video')[i];
+  if(v){v.currentTime=Number((window.__plan.clips[i]||{}).start||0);v.play().catch(()=>{})}
+  renderEditPanel();
+}
+function renderEditPanel(){
+  const p=window.__plan,i=window.__sel||0,c=(p.clips||[])[i],s=(p.script.scenes||[])[i];
+  if(!c){$('editPanel').innerHTML='<div class="empty">该方案没有分镜</div>';return}
+  const lib=(p.library||[]).filter(x=>x.kind==='video');
+  const opts=lib.map(m=>`<option value="${esc(m.path)}" ${m.path===c.source?'selected':''}>${esc(m.label)} · ${m.duration}s</option>`).join('');
+  $('editPanel').innerHTML=`<div class="card"><h2>分镜 ${c.index} 编辑台
+      <span>共 ${(p.clips||[]).length} 镜 · 可选实拍 ${lib.length} 条</span></h2>
+    <div class="editgrid">
+      <video id="editPreview" src="${sourceUrl(c.source)}" muted controls playsinline></video>
+      <div class="pf">
+        <div style="grid-column:1/-1"><label>实拍素材（换片后自动按配音时长重新裁切）</label>
+          <select onchange="changeClip(${i},this.value)">${opts}</select></div>
+        <div><label>入点（秒，从原片第几秒开始切）</label>
+          <input type="number" step="0.1" min="0" value="${c.start||0}" onchange="changeStart(${i},this.value)"></div>
+        <div><label>画面主文案（≤9 字）</label>
+          <input value="${esc(s.on_screen||'')}" onchange="changeText(${i},'on_screen',this.value)"></div>
+        <div style="grid-column:1/-1"><label>副文案（≤18 字）</label>
+          <input value="${esc(s.sub||'')}" onchange="changeText(${i},'sub',this.value)"></div>
+        <div style="grid-column:1/-1"><label>口播文案（修改后渲染时会自动重新配音）</label>
+          <textarea onchange="changeText(${i},'narration',this.value)">${esc(s.narration||'')}</textarea></div>
+      </div>
+    </div>
+    <div class="note">候选标签：${(c.tags||[]).map(esc).join(' / ')||'无'} ·
+      改完点上方「保存修改」，再点「确认方案并渲染成片」。</div></div>`;
+}
+function changeClip(i,path){
+  const p=window.__plan,m=(p.library||[]).find(x=>x.path===path);
+  p.clips[i].source=path; p.clips[i].name=m?m.name:''; p.clips[i].label=m?m.label:path;
+  p.clips[i].clip_duration=m?m.duration:0; p.clips[i].start=0;
+  p.has_real=true; p.material_mode='real_video';
+  $('planTip').textContent='分镜 '+p.clips[i].index+' 已换片，记得点「保存修改」';
+  renderTimeline(); renderEditPanel();
+}
+function changeStart(i,v){window.__plan.clips[i].start=Math.max(0,Number(v)||0)}
+function changeText(i,k,v){if(window.__plan.script.scenes[i])window.__plan.script.scenes[i][k]=v}
+async function savePlan(){
+  if(!window.__plan){$('planTip').textContent='没有可保存的方案';return}
+  const r=await api('/api/plan',J({run_id:window.__planRunId,plan:window.__plan}));
+  $('planTip').textContent=r.ok?'方案已保存，可以渲染了':'保存失败：'+r.error;
+}
+async function renderPlan(){
+  await savePlan();
+  const r=await api('/api/render',J({run_id:window.__planRunId}));
+  if(!r.ok){alert(r.error||'渲染启动失败');return}
+  currentRunId=r.run_id; $('runIdLabel').textContent=r.run_id;
+  $('log').textContent='开始按审核方案裁切实拍素材...\n'; startPoll(); refreshState(); nav('studio');
+}
+
+/* ---------------- 任务中心 ---------------- */
+const STATE_LABEL={done:'已成片',prepared:'待审核',scripts:'已出脚本',running:'运行中',failed:'失败',empty:'空任务'};
+async function loadTasks(){
+  const rows=await api('/api/tasks');
+  if(!rows.length){$('taskList').innerHTML='<div class="empty">还没有任务记录</div>';return}
+  $('taskList').innerHTML=rows.map(t=>`<div class="taskrow">
+    <div class="th"><b>${esc(t.run_id)}</b><span class="st ${esc(t.state)}">${STATE_LABEL[t.state]||t.state}</span>
+      <span style="color:var(--muted);font-size:11px">${t.elapsed||0}s · 成片 ${t.video_count} · 脚本 ${t.script_count}
+      ${t.reviewed_by?' · 审核：'+esc(t.reviewed_by):''}</span>
+      <span class="sp"></span>
+      ${t.plan_ready?`<button class="mini" onclick="jumpEdit('${esc(t.run_id)}')">去镜剪辑</button>`:''}
+      ${t.video_count?'<button class="mini" onclick="nav(\'videos\')">看作品</button>':''}
+      <button class="mini" onclick="showTaskLog('${esc(t.run_id)}')">看日志</button></div>
+    <div class="steps">${(t.steps||[]).map(s=>`<span class="${s.status==='done'?'done':s.status==='failed'?'fail':''}"
+      title="${esc(s.detail)}">${esc(s.name)}</span>`).join('')||'<span>暂无步骤</span>'}</div>
+    ${t.error?`<div style="color:var(--err);font-size:11px;margin-top:7px">${esc(t.error)}</div>`:''}
+  </div>`).join('');
+}
+function jumpEdit(rid){$('planRunSelect').value=rid;nav('edit');loadPlan()}
+async function showTaskLog(rid){
+  const d=await api('/api/run/status?run_id='+encodeURIComponent(rid));
+  currentRunId=rid; nav('studio');
+  $('log').innerHTML=d.log.split('\n').map(l=>`<span class="${l.includes('ERROR')?'e':l.includes('STEP')?'s':l.includes('WARN')?'w':''}">${esc(l)}</span>`).join('\n');
+  $('steps').innerHTML=(d.status.steps||[]).map(s=>`<div class="flowrow ${s.status==='done'?'done':s.status==='failed'?'fail':''}">
+    <span class="fi">${s.status==='done'?'✓':s.status==='failed'?'!':'·'}</span>
+    <span class="fn">${esc(s.name)}</span><span class="fd">${esc(s.detail)}</span></div>`).join('');
+}
+
+/* ---------------- 发布账号管理 ---------------- */
+const PLATFORMS=['抖音','视频号','小红书','快手','B站','微博'];
+const LOGIN_TYPES=['暂不实连','Cookie','Token','开放平台 OAuth'];
+async function loadPublish(){ await loadAccounts(); await loadQueue(); await loadOpHot(); if(window.__opAcc) selectOpAccount(); }
+async function loadAccounts(){
+  const rows=await api('/api/publish/accounts'); window.__accounts=rows; renderAccountRows(rows);
+  fillQueueAccounts(); fillOpAccounts();
+}
+function addAccountRow(){
+  const rows=window.__accounts||[]; rows.push({id:'acc-'+(rows.length+1),platform:'抖音',name:'',login_type:'暂不实连',credential:'',status:'active'});
+  window.__accounts=rows; renderAccountRows(rows);
+}
+function delAccountRow(i){(window.__accounts||[]).splice(i,1);renderAccountRows(window.__accounts)}
+function renderAccountRows(rows){
+  $('accBody').innerHTML=rows.map((a,i)=>`<tr>
+    <td><select data-ai="${i}" data-af="platform">${PLATFORMS.map(p=>`<option ${p===a.platform?'selected':''}>${p}</option>`).join('')}</select></td>
+    <td><input data-ai="${i}" data-af="name" value="${esc(a.name||'')}" placeholder="账号名/昵称"></td>
+    <td><select data-ai="${i}" data-af="login_type">${LOGIN_TYPES.map(t=>`<option ${t===(a.login_type||'暂不实连')?'selected':''}>${t}</option>`).join('')}</select></td>
+    <td><input data-ai="${i}" data-af="credential" placeholder="${a.credential_masked?'已保存（留空不改）':'粘贴 Cookie/Token'}" style="width:100%"></td>
+    <td><button class="mini" onclick="configCookie('${esc(a.id||'')}','${esc(a.platform||'')}')" title="配置该平台的真实登录态（仅管理员）">${a.cookie_masked?'已配置 ✓':'配置'}</button></td>
+    <td><select data-ai="${i}" data-af="status"><option value="active" ${a.status!=='paused'?'selected':''}>启用</option>
+      <option value="paused" ${a.status==='paused'?'selected':''}>停用</option></select></td>
+    <td><button class="mini" onclick="delAccountRow(${i})">删</button></td></tr>`).join('');
+}
+function configCookie(id, plat){
+  if(!id){ $('accTip').textContent='请先保存台账后再配置登录态（需先分配账号 ID）'; return; }
+  window.__ckAcc=id; window.__ckPlat=plat;
+  $('cookieWho').textContent=`${plat} · ${id}`;
+  $('ckTip').textContent='';
+  $('cookieCard').style.display='';
+  $('cookieCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+async function saveCookie(){
+  const r=await api('/api/publish/cookies',J({account_id:window.__ckAcc,platform:window.__ckPlat,
+    cookie:$('ckCookie').value.trim(),csrf:$('ckCsrf').value.trim()}));
+  $('ckTip').textContent=r.ok?`✓ 已保存（${r.platform}，仅本机）`:'失败：'+(r.error||'');
+  if(r.ok){ $('ckCookie').value=''; $('ckCsrf').value=''; await loadAccounts(); }
+}
+async function saveAccounts(){
+  const rows=(window.__accounts||[]).map(a=>Object.assign({},a));
+  document.querySelectorAll('#accBody [data-ai]').forEach(el=>{rows[Number(el.dataset.ai)][el.dataset.af]=el.value});
+  rows.forEach(a=>{ if(a.credential==='' && a.credential_masked) a.credential='__KEEP__'; });
+  const r=await api('/api/publish/accounts',J({items:rows}));
+  $('accTip').textContent=r.ok?`已保存 ${r.count} 个账号（凭证本机存放）`:'失败：'+r.error;
+  await loadAccounts();
+}
+function fillOpAccounts(){
+  const rows=window.__accounts||[];
+  $('opAccount').innerHTML=rows.length?rows.map(a=>`<option value="${esc(a.id)}">${esc(a.platform)} · ${esc(a.name||a.id)}</option>`).join(''):'<option value="">请先登记账号</option>';
+  if(!window.__opAcc && rows.length){window.__opAcc=rows[0].id; $('opAccount').value=rows[0].id; selectOpAccount();}
+}
+function selectOpAccount(){
+  const id=$('opAccount').value; if(!id){$('opAccInfo').textContent='';return;}
+  window.__opAcc=id;
+  const a=(window.__accounts||[]).find(x=>x.id===id)||{};
+  $('opAccInfo').textContent=(a.login_type||'')+(a.credential_masked?'：凭证已保存':'');
+  loadDrafts(); loadComments(); setOp('draft');
+}
+function setOp(m){
+  const map={draft:'opDraftBox',hot:'opHotBox',cm:'opCmBox',auto:'opAutoBox'};
+  const btn={draft:'opDraft',hot:'opHot',cm:'opCm',auto:'opAuto'};
+  Object.keys(map).forEach(x=>{$(map[x]).style.display=x===m?'':'none';$(btn[x]).classList.toggle('on',x===m);});
+  if(m==='draft')renderDrafts(); if(m==='hot')renderOpHot(); if(m==='cm')renderComments(); if(m==='auto')renderAuto();
+}
+/* 草稿箱 */
+async function loadDrafts(){ window.__drafts=await api('/api/publish/drafts?account_id='+encodeURIComponent(window.__opAcc||'')); renderDrafts(); }
+function renderDrafts(){
+  const items=window.__drafts||[];
+  $('opDraftBox').innerHTML=`<div class="bar" style="margin-bottom:10px">
+      <input id="dfTitle" placeholder="标题" style="min-width:160px">
+      <input id="dfTags" placeholder="话题标签 #健身" style="min-width:140px">
+      <button class="btn" onclick="addDraft()">＋ 添加草稿</button></div>
+    <textarea id="dfBody" placeholder="文案正文…" style="width:100%;min-height:90px"></textarea>
+    <div id="dfList" style="margin-top:10px">${items.length?items.map((d,i)=>`
+      <div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px">
+        <b>${esc(d.title||'未命名')}</b> <span class="hint">${esc(d.tags||'')} · ${d.status==='published'?'已发布':'草稿'}</span>
+        <div style="white-space:pre-wrap;margin:6px 0;font-size:13px">${esc(d.body||'')}</div>
+        <button class="mini" onclick="copyDraft(${i})">复制</button>
+        <button class="mini" onclick="pubDraft(${i})">${d.status==='published'?'已是已发布':'标记已发布'}</button>
+        <button class="mini" onclick="publishToPlatform(${i})">发布到平台</button>
+        <button class="mini" onclick="delDraft(${i})">删除</button>
+        <div class="hint" id="dfPub${i}" style="margin-top:4px"></div>
+      </div>`).join(''):'<div class="empty">还没有草稿</div>'}</div>`;
+}
+async function publishToPlatform(i){
+  const d=(window.__drafts||[])[i]; if(!d)return;
+  const a=(window.__accounts||[]).find(x=>x.id===window.__opAcc)||{};
+  const vp=prompt('真实发布需要本机已渲染成片的 MP4 绝对路径：\n（B站需先在该账号配置 SESSDATA + bili_jct 登录态；抖音/视频号会明确返回「需企业资质」）', d.video_path||'');
+  if(vp===null)return;
+  const tags=(d.tags||'').split(/[,\s#]+/).filter(Boolean);
+  const r=await api('/api/platform/'+encodeURIComponent(a.platform||'B站')+'/publish',
+    J({account_id:window.__opAcc, video_path:vp.trim(), mode:'draft',
+       meta:{title:d.title||'',desc:d.body||'',tags:tags.length?tags:['健身']}}));
+  const out=$('dfPub'+i); if(out) out.textContent=r.ok?'✓ 已提交发布':'✗ '+(r.error||'发布未完成');
+}
+async function addDraft(){
+  const items=window.__drafts||[];
+  items.unshift({id:'d-'+(items.length+1)+'-'+Date.now(),title:$('dfTitle').value.trim(),tags:$('dfTags').value.trim(),body:$('dfBody').value.trim(),status:'draft',at:''});
+  const r=await api('/api/publish/drafts',J({account_id:window.__opAcc,items})); if(r.ok){$('dfTitle').value='';$('dfTags').value='';$('dfBody').value='';await loadDrafts();}
+}
+async function delDraft(i){const items=(window.__drafts||[]).slice();items.splice(i,1);const r=await api('/api/publish/drafts',J({account_id:window.__opAcc,items}));if(r.ok)await loadDrafts();}
+async function pubDraft(i){const items=(window.__drafts||[]).slice();if(items[i])items[i].status='published';const r=await api('/api/publish/drafts',J({account_id:window.__opAcc,items}));if(r.ok)await loadDrafts();}
+function copyDraft(i){const d=(window.__drafts||[])[i];if(d)navigator.clipboard&&navigator.clipboard.writeText(d.body||'');}
+/* 搜热点 —— 函数名加 op 前缀，避免覆盖「今日热点」页的 loadHot/renderHot */
+function _opAcc(){ return (window.__accounts||[]).find(x=>x.id===window.__opAcc)||{}; }
+async function loadOpHot(){ window.__hotAll=await api('/api/hot'); }
+function renderOpHot(){
+  const a=_opAcc();
+  $('opHotBox').innerHTML=`<div class="bar">
+      <input id="hotKw" placeholder="关键词，如 减脂 / 深蹲" style="min-width:190px">
+      <button class="btn" onclick="searchOpHot()">搜本地热点库</button>
+      <button class="btn ghost" onclick="pullRealHot()">拉 ${esc(a.platform||'平台')} 真实热点</button>
+      <span class="hint">真实热点走平台公开接口（B站搜索 / 抖音热榜），无需登录</span></div>
+    <div id="hotRes" class="hint" style="margin-top:8px">输入关键词，或点「拉真实热点」联网获取</div>`;
+}
+async function pullRealHot(){
+  const a=_opAcc(); if(!a.platform){ $('hotRes').textContent='请先登记账号'; return; }
+  const kw=(($('hotKw')&&$('hotKw').value)||'').trim();
+  $('hotRes').textContent='正在联网拉取 '+a.platform+' 真实热点…';
+  const r=await api('/api/platform/'+encodeURIComponent(a.platform)+'/hot?keyword='+encodeURIComponent(kw)+'&account_id='+encodeURIComponent(window.__opAcc||''));
+  if(!r.ok){ $('hotRes').textContent='✗ '+(r.error||'拉取失败'); return; }
+  const items=r.items||[];
+  $('hotRes').innerHTML=items.length?items.slice(0,40).map(h=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+    <b>${esc(h.title||h.word||h.name||'')}</b>
+    <span class="hint">${esc(h.author||h.source||'')} ${h.play?esc(h.play)+'播放':''} ${h.hot?esc(h.hot)+'热度':''}</span>
+    ${h.url?`<a href="${esc(h.url)}" target="_blank" rel="noopener" class="hint">打开</a>`:''}</div>`).join(''):'该平台未返回热点';
+}
+async function searchOpHot(){
+  const kw=($('hotKw').value||'').trim(); const all=window.__hotAll||(await api('/api/hot'));
+  const top=(all.top||[]).concat(all.fitness_related||[]);
+  const hits=kw?top.filter(x=>JSON.stringify(x).toLowerCase().includes(kw.toLowerCase())):top;
+  $('hotRes').innerHTML=hits.length?hits.slice(0,40).map(h=>`<div style="padding:6px 0;border-bottom:1px solid var(--line)">
+    <b>${esc(h.word||h.title||h.name||'')}</b> <span class="hint">${esc(h.source||h.hot||'')}</span></div>`).join(''):'没有匹配到热点';
+}
+/* 评论管理 */
+async function loadComments(){ window.__comments=await api('/api/publish/comments?account_id='+encodeURIComponent(window.__opAcc||'')); renderComments(); }
+function renderComments(){
+  const items=window.__comments||[];
+  const a=_opAcc();
+  $('opCmBox').innerHTML=`<div class="bar" style="margin-bottom:8px">
+      <input id="cmAuthor" placeholder="昵称" style="min-width:110px">
+      <input id="cmText" placeholder="评论内容" style="flex:1;min-width:140px">
+      <button class="btn" onclick="addComment()">＋ 手工添加</button></div>
+    <div class="bar" style="margin-bottom:10px">
+      <input id="cmRef" placeholder="B站视频 BV 号（如 BV1xx411c7mD）" style="min-width:230px">
+      <button class="btn ghost" onclick="pullRealComments()">拉 ${esc(a.platform||'平台')} 真实评论</button>
+      <span class="hint" id="cmPullTip">B站公开评论接口无需登录；抖音/小红书需登录态与签名</span></div>
+    <div id="cmList">${items.length?items.map((c,i)=>`
+      <div style="border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px">
+        <b>${esc(c.author||'匿名')}</b><span class="hint"> ${esc(c.at||'')}</span>
+        <div style="margin:4px 0;font-size:13px">${esc(c.text||'')}</div>
+        <div class="bar">
+          <button class="mini" onclick="genReply(${i})">AI 起草回复</button>
+          <button class="mini" onclick="toggleReplied(${i})">${c.replied?'已回复✓':'标记已回复'}</button>
+          <button class="mini" onclick="delComment(${i})">删除</button>
+        </div>
+        <div class="hint" id="cmSrc${i}" style="margin-top:4px"></div>
+        <textarea id="cmReply${i}" placeholder="回复内容（可编辑后保存）" style="width:100%;min-height:54px;margin-top:6px">${esc(c.reply||'')}</textarea>
+      </div>`).join(''):'<div class="empty">还没有评论</div>'}</div>`;
+}
+async function pullRealComments(){
+  const a=_opAcc(); const ref=(($('cmRef')&&$('cmRef').value)||'').trim();
+  const tip=$('cmPullTip'); if(tip)tip.textContent='正在拉取真实评论…';
+  const r=await api('/api/platform/'+encodeURIComponent(a.platform||'')+'/comments?ref='+encodeURIComponent(ref)+'&account_id='+encodeURIComponent(window.__opAcc||''));
+  if(!r.ok){ if(tip)tip.textContent='✗ '+(r.error||'拉取失败'); return; }
+  const rows=r.comments||r.items||[];
+  if(!rows.length){ if(tip)tip.textContent='该视频暂无评论或平台未返回数据'; return; }
+  const items=(window.__comments||[]).slice();
+  rows.forEach(x=>items.unshift({author:x.user||x.uname||'匿名',text:x.text||x.content||'',reply:'',replied:false,at:String(x.time||'')}));
+  const s=await api('/api/publish/comments',J({account_id:window.__opAcc,items}));
+  if(s.ok){ await loadComments(); const o=$('cmPullTip'); if(o)o.textContent='✓ 已拉取 '+rows.length+' 条真实评论并合入本地台账'; }
+}
+async function addComment(){const items=window.__comments||[];items.unshift({author:$('cmAuthor').value.trim(),text:$('cmText').value.trim(),reply:'',replied:false,at:''});const r=await api('/api/publish/comments',J({account_id:window.__opAcc,items}));if(r.ok){$('cmAuthor').value='';$('cmText').value='';await loadComments();}}
+async function genReply(i){
+  const c=(window.__comments||[])[i];if(!c)return;
+  $('cmReply'+i).value='生成中…';
+  const r=await api('/api/publish/reply',J({account_id:window.__opAcc,comment:c.text||''}));
+  if(r.ok&&r.reply){
+    $('cmReply'+i).value=r.reply;
+    const o=$('cmSrc'+i);
+    if(o)o.textContent=r.source==='gateway'?'来源：AI 网关（免费模型）':'来源：离线模板兜底（模型不可用，已降级）';
+  } else { $('cmReply'+i).value='生成失败：'+(r.error||''); }
+}
+async function toggleReplied(i){const items=(window.__comments||[]).slice();if(items[i])items[i].replied=!items[i].replied;const r=await api('/api/publish/comments',J({account_id:window.__opAcc,items}));if(r.ok)await loadComments();}
+async function delComment(i){const items=(window.__comments||[]).slice();items.splice(i,1);const r=await api('/api/publish/comments',J({account_id:window.__opAcc,items}));if(r.ok)await loadComments();}
+/* 自动回复（关键词规则，本地 localStorage） */
+function _autoKey(){return 'lynvos_auto_'+(window.__opAcc||'');}
+function loadAutoRules(){try{return JSON.parse(localStorage.getItem(_autoKey())||'[]')}catch(e){return[]}}
+function saveAutoRules(a){localStorage.setItem(_autoKey(),JSON.stringify(a));}
+function renderAuto(){
+  const rules=loadAutoRules();
+  $('opAutoBox').innerHTML=`<div class="hint" style="margin-bottom:8px">关键词 → 回复模板（本地规则，存在本浏览器）。未命中规则时用下方「AI 起草」调用平台免费模型生成。</div>
+    <div class="bar"><input id="arKw" placeholder="命中关键词，如 价格" style="min-width:140px">
+      <input id="arTpl" placeholder="回复模板，如 私信发你课程表～" style="flex:1;min-width:160px">
+      <button class="btn" onclick="addRule()">＋ 加规则</button></div>
+    <div id="arList" style="margin-top:8px">${rules.length?rules.map((r,i)=>`<div class="flowrow"><span class="fn">${esc(r.kw)}</span><span class="fd">${esc(r.tpl)}</span><button class="mini" onclick="delRule(${i})">删</button></div>`).join(''):'<div class="empty">还没有规则</div>'}</div>
+    <div class="bar" style="margin-top:12px"><input id="arTest" placeholder="粘贴一条评论测试命中" style="flex:1;min-width:180px">
+      <button class="btn" onclick="testRule()">测试命中</button>
+      <button class="mini" onclick="testRule(true)">AI 起草</button></div>
+    <div id="arOut" class="hint" style="margin-top:8px"></div>`;
+}
+function addRule(){const kw=$('arKw').value.trim(),tpl=$('arTpl').value.trim();if(!kw||!tpl)return;const a=loadAutoRules();a.push({kw,tpl});saveAutoRules(a);renderAuto();}
+function delRule(i){const a=loadAutoRules();a.splice(i,1);saveAutoRules(a);renderAuto();}
+async function testRule(useAI){
+  const txt=$('arTest').value.trim(); if(!txt){$('arOut').textContent='请粘贴一条评论';return;}
+  if(!useAI){const r=loadAutoRules().find(x=>txt.includes(x.kw));$('arOut').textContent=r?('命中规则「'+r.kw+'」→ '+r.tpl):'未命中任何规则（可点「AI 起草」）';return;}
+  const r=await api('/api/publish/reply',J({account_id:window.__opAcc,comment:txt}));
+  $('arOut').textContent = r.ok
+    ? r.reply + (r.source==='gateway' ? '\n（来源：AI 网关免费模型）' : '\n（来源：离线模板兜底，模型不可用已降级）')
+    : '生成失败：'+r.error;
+}
+async function fillQueueAccounts(){
+  const rows=await api('/api/publish/accounts');
+  $('queueAccount').innerHTML=rows.filter(a=>a.status!=='paused').map(a=>
+    `<option value="${esc(a.id)}">${esc(a.platform)} · ${esc(a.name)}</option>`).join('')||'<option value="">未登记账号</option>';
+}
+async function addToQueue(){
+  if(!current){$('queueTip').textContent='请先打开一条成片';return}
+  const r=await api('/api/publish/queue',J({action:'add',video:current,account_id:$('queueAccount').value}));
+  $('queueTip').textContent=r.ok?'已加入待发布清单':r.error;
+  refreshState();
+}
+async function loadQueue(){
+  const rows=await api('/api/publish/queue'); window.__queue=rows;
+  const acc=(window.__accounts||await api('/api/publish/accounts'));
+  const nameOf=id=>{const a=acc.find(x=>x.id===id);return a?a.platform+' · '+a.name:'未指定账号'};
+  $('queueCount').textContent=`${rows.filter(x=>x.status==='pending').length} 条待发布 / 共 ${rows.length} 条`;
+  if(!rows.length){$('queueList').innerHTML='<div class="empty">暂无待发布作品。到「作品库」打开一条成片，点「加入待发布清单」。</div>';return}
+  $('queueList').innerHTML=rows.map(q=>`<div class="taskrow">
+    <div class="th"><b>${esc(q.title||'未命名作品')}</b>
+      <span class="st ${q.status==='published'?'done':'prepared'}">${q.status==='published'?'已发布':'待发布'}</span>
+      <span style="color:var(--muted);font-size:11px">${esc(nameOf(q.account_id))} · ${esc(q.at)}</span>
+      <span class="sp"></span>
+      <button class="mini" onclick="copyQueueText('${esc(q.id)}')">复制文案</button>
+      <button class="mini" onclick="openQueueVideo('${esc(q.id)}')">下载成片</button>
+      ${q.status==='pending'?`<button class="mini" onclick="queueAct('status','${esc(q.id)}','published')">标记已发布</button>`:
+        `<button class="mini" onclick="queueAct('status','${esc(q.id)}','pending')">撤回</button>`}
+      <button class="mini" onclick="queueAct('remove','${esc(q.id)}')">移除</button></div>
+  </div>`).join('');
+}
+function copyQueueText(id){
+  const q=(window.__queue||[]).find(x=>x.id===id);
+  if(q)navigator.clipboard.writeText(q.caption||'').then(()=>alert('发布文案已复制'));
+}
+function openQueueVideo(id){
+  const q=(window.__queue||[]).find(x=>x.id===id); if(!q)return;
+  window.open('/media/output/'+encodeURIComponent(String(q.video).split(/[\\/]/).pop()));
+}
+async function queueAct(action,id,status){
+  await api('/api/publish/queue',J({action,id,status})); loadQueue(); refreshState();
+}
+
+/* ---------------- 平台设置 ---------------- */
+function renderConfig(){
+  if(!cfg)return;
+  const b=cfg.brand,v=cfg.video,vo=cfg.voice,m=cfg.materials||{};
+  const curVoice=vo.voice_ref||(vo.provider==='sapi'?'sapi:'+(vo.sapi_voice||'Huihui'):'edge:'+(vo.edge_voice||'zh-CN-YunxiNeural'));
+  $('configForm').innerHTML=`
+   <div><label>品牌名称</label><input data-k="brand.name" value="${esc(b.name)}"></div>
+   <div><label>Slogan</label><input data-k="brand.slogan" value="${esc(b.slogan)}"></div>
+   <div><label>账号 ID</label><input data-k="brand.handle" value="${esc(b.handle)}"></div>
+   <div><label>行动号召 CTA</label><input data-k="brand.cta" value="${esc(b.cta)}"></div>
+   <div><label>水印文字</label><input data-k="brand.watermark" value="${esc(b.watermark)}"></div>
+   <div><label>主色</label><input data-k="brand.color_primary" value="${esc(b.color_primary)}"></div>
+   <div><label>目标人群</label><input data-k="niche.audience" value="${esc(cfg.niche.audience)}"></div>
+   <div style="grid-column:1/-1"><label>当前配音音色（到「音色管理」试听后点「设为默认」自动同步，这里只读）</label>
+     <input value="${esc(curVoice)}" disabled style="opacity:.75"></div>
+   <div><label>语速（对离线 / 免费 / 商业引擎均生效）</label><input type="number" step="0.05" min="0.5" max="2" data-k="voice.speed" value="${vo.speed}"></div>
+   <div><label>素材库为空时自动铺演示实拍</label><select data-k="materials.auto_demo"><option value="true" ${m.auto_demo!==false?'selected':''}>开启</option><option value="false" ${m.auto_demo===false?'selected':''}>关闭（只用自有素材）</select></div>
+   <div><label>单段素材最长秒数</label><input type="number" data-k="materials.max_clip_seconds" value="${m.max_clip_seconds||12}"></div>
+   <div><label>帧率</label><input type="number" data-k="video.fps" value="${v.fps}"></div>
+   <div><label>BGM 音量</label><input type="number" step="0.01" data-k="video.bgm_volume" value="${v.bgm_volume}"></div>
+   <div><label>每日自动生成</label><select data-k="schedule.enabled"><option value="true" ${cfg.schedule&&cfg.schedule.enabled?'selected':''}>开启（控制台运行时生效）</option><option value="false" ${!cfg.schedule||!cfg.schedule.enabled?'selected':''}>关闭</select></div>
+   <div><label>触发时间（分 时 日 月 周）</label><input data-k="schedule.cron" value="${esc(cfg.schedule?cfg.schedule.cron:'0 9 * * *')}"></div>
+   <div style="grid-column:1/-1"><label>常青选题库（JSON 数组，留空不改）</label><textarea data-k="niche.evergreen_topics" placeholder="保留现有配置请留空"></textarea></div>`;
+}
+async function saveSettings(){
+  const patch={};
+  document.querySelectorAll('#configForm [data-k]').forEach(el=>{
+    let val=el.value;
+    if(el.tagName==='TEXTAREA'&&!val.trim())return;
+    if(el.type==='number')val=Number(val);
+    if(val==='true')val=true; if(val==='false')val=false;
+    const [g,k]=el.dataset.k.split('.'); (patch[g]=patch[g]||{})[k]=val;
+  });
+  const r=await api('/api/config',J(patch));
+  $('setTip').textContent=r.ok?'已保存，下次生成生效':'保存失败：'+r.error;
+  cfg=await api('/api/config'); refreshState();
+}
+
+/* ---------------- 承诺口径（按四结构位可换） ---------------- */
+const OFFER_SLOTS=['opening','hook','body','closing'];
+async function loadOffers(){
+  const el=$('offerSlots'); if(!el)return;
+  let d;
+  try{ d=await api('/api/offers'); }catch(e){ $('offerTip').textContent='读取失败：'+e; return; }
+  window.__offers=d;
+  if(!d.enabled){
+    el.innerHTML='<tr><td>承诺方案未启用，产物回退到通用文案。</td></tr>';
+    $('offerState').textContent='未启用'; return;
+  }
+  const a=d.audit||{}, labels=d.slot_labels||{}, ov=d.overrides||{}, blocked=a.blocked_slots||[];
+  $('offerState').textContent=a.active||'—';
+  $('offerState').className='state '+(blocked.length?'':'ok');
+  $('offerSelect').innerHTML=(d.offers||[]).map(o=>
+    `<option value="${esc(o.id)}" ${o.id===d.active?'selected':''}>${esc(o.name)}${o.confirmed?'':' · 未确认'}</option>`).join('');
+  $('offerMeta').innerHTML=`
+    <div>确认状态：<b>${a.confirmed?'已确认':'未确认'}</b> · 具体承诺放行：<b>${a.specific_allowed?'是':'否'}</b>
+      ${blocked.length?' · <span style="color:var(--warn,#e5a54b)">已拦截并回退：'+esc(blocked.map(n=>labels[n]||n).join('、'))+'</span>':''}</div>
+    <div>确认依据：${esc(a.confirmed_by||'—')} · 有效期至：${esc((a.valid||{}).until||'未设')}</div>
+    <div>来源：${esc(a.source||'—')}</div>`;
+  el.innerHTML='<tr><th style="width:70px">结构位</th><th>当前生效文案</th><th style="width:110px">画面主文案</th><th style="width:100px">来源</th></tr>'+
+    OFFER_SLOTS.map(n=>{
+      const s=(d.slots||{})[n]||{};
+      const origin=s.origin==='override'?'逐位覆盖':(s.blocked?'闸门回退':(s.origin==='preset'?'方案':'缺省'));
+      return `<tr><td><b>${esc(labels[n]||n)}</b><br><span style="color:var(--muted);font-size:10px">${esc(n)}</span></td>
+        <td>${esc(s.text||'（沿用选题默认）')}${s.blocked?'<br><span style="color:var(--warn,#e5a54b)">已拦：'+esc((s.blocked_claims||[]).join('、'))+'</span>':''}</td>
+        <td>${esc(s.on_screen||'—')}</td><td>${esc(origin)}</td></tr>`;
+    }).join('');
+  $('offerOverrides').innerHTML=OFFER_SLOTS.map(n=>{
+    const s=(d.slots||{})[n]||{};
+    return `<div><label>只改${esc(labels[n]||n)}（留空 = 用方案值）</label>
+      <textarea data-offer-slot="${n}" placeholder="${esc(s.text||'沿用选题默认')}">${esc(ov[n]||'')}</textarea></div>`;
+  }).join('');
+  renderOfferConfirm(d);
+}
+const OC_STATUS={none:'未登记',confirmed:'已确认 · 放行',revoked:'已撤销',expired:'已过期',incomplete:'信息不全'};
+const OC_FIELDS={confirmed_by:'确认人',evidence:'书面凭证',allows_specific_claims:'明确允许具体承诺','valid.until':'未来截止日'};
+function renderOfferConfirm(d){
+  if(!d||!$('offerConfirmMeta'))return;
+  const target=($('offerSelect')||{}).value||d.active;
+  const row=(d.offers||[]).find(o=>o.id===target)||{};
+  const un=row.unlock||{status:'none',missing:[]};
+  const label=OC_STATUS[un.status]||un.status||'未登记';
+  $('offerConfirmState').textContent=label;
+  $('offerConfirmState').className='state '+(un.status==='confirmed'?'ok':'');
+  const req=(d.unlock_requirements||[]).map(x=>OC_FIELDS[x]||x);
+  const gaps=(un.missing||[]).map(x=>OC_FIELDS[x]||x);
+  $('offerConfirmMeta').innerHTML=`
+    <div>登记对象：<b>${esc(target||'—')}</b> · 台账状态：<b>${esc(label)}</b>
+      ${target!==d.active?' · <span style="color:var(--warn,#e5a54b)">该方案尚未点「切换并保存」</span>':''}</div>
+    <div>放行四项：${req.map(esc).join(' · ')||'—'}${d.unlock_note?'<br><span style="font-size:11px">'+esc(d.unlock_note)+'</span>':''}</div>
+    <div>${gaps.length?'<span style="color:var(--warn,#e5a54b)">尚缺：'+esc(gaps.join('、'))+'，含具体承诺的结构位仍会被闸门回退</span>':'四项齐备，具体承诺在有效期内放行'}</div>
+    ${un.record?'<div>最近记录：'+esc(un.record.action==='revoke'?'撤销':'登记')+' · '+esc(un.record.recorded_at||'')+' · '+esc(un.record.confirmed_by||un.record.reason||'')+'</div>':''}`;
+  const rows=(d.confirmations||[]).slice().reverse().slice(0,8);
+  $('offerConfirmLog').innerHTML='<h3>确认台账（只追加，不删历史）</h3><table>'
+    +'<tr><th style="width:150px">时间</th><th style="width:130px">方案</th><th style="width:60px">动作</th><th>确认人 / 凭证</th><th style="width:100px">截止日</th></tr>'
+    +(rows.length?rows.map(r=>`<tr><td>${esc(r.recorded_at||'')}</td><td>${esc(r.preset_id||'')}</td>
+        <td>${r.action==='revoke'?'撤销':'登记'}</td>
+        <td>${esc(r.confirmed_by||r.reason||'—')}<br><span style="color:var(--muted);font-size:11px">${esc(r.evidence||'')}</span></td>
+        <td>${esc((r.valid||{}).until||'—')}</td></tr>`).join('')
+      :'<tr><td colspan="5" style="color:var(--muted)">暂无确认记录 —— 含具体承诺的方案默认被拦截</td></tr>')
+    +'</table>';
+}
+async function saveOfferConfirm(){
+  const tip=$('ocTip'),sel=$('offerSelect');
+  if(!sel||!sel.value){tip.textContent='请先选择方案';return}
+  const body={preset_id:sel.value,action:'confirm',
+    confirmed_by:$('ocWho').value.trim(),evidence:$('ocEvidence').value.trim(),
+    valid_from:$('ocFrom').value,valid_until:$('ocUntil').value,
+    allows_specific_claims:$('ocAllow').checked,note:$('ocNote').value.trim()};
+  let r;
+  try{r=await api('/api/offers/confirm',J(body));}catch(e){tip.textContent='登记失败：'+e;return}
+  tip.textContent=r.ok?`已登记 ${r.preset_id} 的书面确认，具体承诺即时放行`:'登记失败：'+(r.error||'未知错误');
+  if(r.ok)await loadOffers();
+}
+async function revokeOfferConfirm(){
+  const tip=$('ocTip'),sel=$('offerSelect');
+  if(!sel||!sel.value){tip.textContent='请先选择方案';return}
+  if(!window.confirm(`确定撤销「${sel.value}」的门店书面确认？撤销后含具体承诺的结构位立即回退到保守口径。`))return;
+  const body={preset_id:sel.value,action:'revoke',reason:$('ocNote').value.trim()||'设置页手动撤销'};
+  let r;
+  try{r=await api('/api/offers/confirm',J(body));}catch(e){tip.textContent='撤销失败：'+e;return}
+  tip.textContent=r.ok?'已撤销，具体承诺即时回退':'撤销失败：'+(r.error||'未知错误');
+  if(r.ok)await loadOffers();
+}
+async function saveOffer(){
+  const sel=$('offerSelect'), tip=$('offerTip');
+  if(!sel||!sel.value){tip.textContent='请先选择方案';return}
+  const overrides={};
+  document.querySelectorAll('#offerOverrides [data-offer-slot]').forEach(el=>{
+    overrides[el.dataset.offerSlot]=el.value.trim();
+  });
+  const r=await api('/api/offers/set',J({active:sel.value,overrides}));
+  tip.textContent=r.ok?`已切换到 ${sel.value}，下次生成生效`:'保存失败：'+(r.error||'未知错误');
+  if(r.ok)await loadOffers();
+}
+function clearOfferOverrides(){
+  document.querySelectorAll('#offerOverrides [data-offer-slot]').forEach(el=>{el.value=''});
+  $('offerTip').textContent='覆盖已清空，点「切换并保存」写入配置';
+}
+
+/* ---------------- 任务执行 ---------------- */
+function fillSelect(sel,runs){
+  const list=runs||window.__runs||[]; if(!sel)return;
+  const old=sel.value;
+  sel.innerHTML=list.map(r=>`<option value="${r}">${r}</option>`).join('')||'<option value="">暂无运行记录</option>';
+  if(old&&[...sel.options].some(o=>o.value===old))sel.value=old;
+  else if(currentRunId&&[...sel.options].some(o=>o.value===currentRunId))sel.value=currentRunId;
+}
+async function startRun(){
+  const r=await api('/api/run',J({count:Number($('count').value),step:mode}));
+  if(!r.ok){alert(r.error||'启动失败');return}
+  currentRunId=r.run_id; $('runIdLabel').textContent=r.run_id;
+  $('log').textContent='任务已启动，正在采集热点...\n'; $('steps').innerHTML='';
+  refreshState(); startPoll();
+}
+function startPoll(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(poll,1600);poll()}
+async function poll(){
+  if(!currentRunId)return;
+  const d=await api('/api/run/status?run_id='+encodeURIComponent(currentRunId));
+  $('log').innerHTML=d.log.split('\n').map(l=>
+    `<span class="${l.includes('ERROR')?'e':l.includes('STEP')?'s':l.includes('WARN')?'w':''}">${esc(l)}</span>`).join('\n');
+  const box=$('log'); box.scrollTop=box.scrollHeight;
+  $('steps').innerHTML=(d.status.steps||[]).map(s=>`<div class="flowrow ${s.status==='done'?'done':s.status==='failed'?'fail':''}">
+    <span class="fi">${s.status==='done'?'✓':s.status==='failed'?'!':'·'}</span>
+    <span class="fn">${esc(s.name)}</span><span class="fd">${esc(s.detail)}</span></div>`).join('');
+  if(!d.running&&d.status.steps&&d.status.steps.length){
+    clearInterval(pollTimer);pollTimer=null;refreshState();
+    if(d.plan_ready){nav('edit');$('planTip').textContent='方案已就绪，逐镜确认后点「确认方案并渲染成片」'}
+  }
+}
+refreshState().then(()=>{
+  const t=new URLSearchParams(location.search).get('nav');
+  if(t&&$('pane-'+t))nav(t);
+});
+loadHot(); renderConfig();
+setInterval(()=>{if(!pollTimer)refreshState()},12000);
+</script>
+</body>
+</html>

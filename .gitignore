@@ -1,0 +1,32 @@
+# ---- 本机用户数据与凭据：永久不入库 ----
+config.json
+data/
+output/
+port.json
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# ---- 运行与构建产物 ----
+__pycache__/
+*.py[cod]
+*.pyo
+build/
+dist/
+*.spec
+desktop/build/
+desktop/dist/
+*.log
+
+# ---- 编辑器与系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 虚拟环境与临时锁定件 ----
+.venv/
+venv/
+env/

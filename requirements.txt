@@ -1,0 +1,19 @@
+# 依赖已按 2026-11-08 实测环境精确锁定：Python 3.13.14 / Windows。
+# 锁定而非 >=：否则「本机能跑」不可复现，验证读数会随依赖漂移失效。
+# 外部必需程序：FFmpeg + FFprobe（需在 PATH 中）。
+# 其余全部使用 Python 标准库（urllib / wave / array / http.server / ctypes）。
+
+# 分镜画面 / 封面绘制
+Pillow==13.0.0
+
+# 零密钥在线配音（平台默认引擎）
+edge-tts==7.3.1
+
+# 完全离线配音（仅 Windows）：系统自带 SAPI 中文语音包，零联网、零模型下载
+comtypes==1.4.17; sys_platform == "win32"
+
+# 本地逐字稿：faster-whisper CPU int8。首次使用经 HF_ENDPOINT 镜像下载模型。
+# 此前为手工安装、未列入依赖，导致 clone 后转写功能缺失 —— 已补齐。
+faster-whisper==1.2.1
+ctranslate2==4.8.5
+numpy==2.5.4

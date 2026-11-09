@@ -1,0 +1,51 @@
+# 凌扬运动 LYNVOS FIT 反向代理示例 → /etc/nginx/conf.d/gym-pulse.conf
+#
+# 【必须用子域名，不要用子路径】
+# 应用内所有 URL 都是根路径 /api/... 与 /media/...，
+# 因此推荐 studio.awkn.cn；若一定要用 awkn.cn/gymstudio/，需逐条 rewrite 前端资源路径。
+#
+# 【必须先配好访问口令】
+# 后端即使只绑 127.0.0.1，经 Nginx 暴露到公网后依然等于裸奔。
+# 启动前创建 data/users.json（见 deploy/users.example.json），或在 systemd 的 GYMPULSE_USERS 里配置。
+# 口令走 HTTP Basic，必须套 HTTPS，否则等同于明文传密码。
+
+server {
+    listen 80;
+    server_name studio.awkn.cn;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name studio.awkn.cn;
+
+    ssl_certificate     /etc/letsencrypt/live/awkn.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/awkn.cn/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    # 素材上传：base64 编码后约为原文件 1.33 倍，150m 可上传约 100MB 视频
+    client_max_body_size 150m;
+    client_body_timeout  300s;
+    # 单条成片渲染约 40~120 秒，超时要放宽
+    proxy_connect_timeout 30s;
+    proxy_read_timeout    600s;
+    proxy_send_timeout    600s;
+
+    # 视频拖动播放依赖 Range 透传；关闭缓冲避免整个 MP4 被读入内存
+    proxy_buffering off;
+    proxy_request_buffering off;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # 应用层自行校验 Basic Auth 并做权限分级，不要在 Nginx 再套一层 auth_basic
+    proxy_set_header Authorization     $http_authorization;
+
+    location / {
+        proxy_pass http://127.0.0.1:8787;
+    }
+}

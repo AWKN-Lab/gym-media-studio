@@ -1,0 +1,14 @@
+{
+  "license": "Pexels License：免费可商用、无需署名。此处仅作零配置演示素材；正式运营请替换为你自己门店的实拍视频，避免观众误认为是本店画面。",
+  "source": "pexels_public_download",
+  "note": "直链为 Pexels 公开免登录下载端点，不需要 API Key；若链接失效可在控制台改用自己的 Pexels Key 检索或本地上传。",
+  "clips": [
+    {"id": "4367640", "url": "https://www.pexels.com/download/video/4367640/", "label": "进馆背影 · 门店氛围", "tags": ["门店", "氛围", "背影", "教练"]},
+    {"id": "35585658", "url": "https://www.pexels.com/download/video/35585658/", "label": "坐姿下拉 · 背部训练", "tags": ["训练", "教练", "背部", "下拉"]},
+    {"id": "5320001", "url": "https://www.pexels.com/download/video/5320001/", "label": "杠铃片特写 · 器械", "tags": ["器械", "特写", "杠铃", "卧推"]},
+    {"id": "34324809", "url": "https://www.pexels.com/download/video/34324809/", "label": "配重片特写 · 器械", "tags": ["器械", "特写", "配重"]},
+    {"id": "35585700", "url": "https://www.pexels.com/download/video/35585700/", "label": "引体向上 · 背部训练", "tags": ["训练", "引体", "背部"]},
+    {"id": "4671950", "url": "https://www.pexels.com/download/video/4671950/", "label": "女性引体 · 训练", "tags": ["训练", "引体", "女性"]},
+    {"id": "6053511", "url": "https://www.pexels.com/download/video/6053511/", "label": "有氧设备特写 · 器械", "tags": ["器械", "特写", "有氧", "设备"]}
+  ]
+}

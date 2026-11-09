@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "主窗口最小权限；界面由本机 Python 服务提供，不走 Tauri IPC",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
