@@ -8,11 +8,13 @@ provider=sapi 是纯本机 COM 合成，不发起任何网络请求，且失败�
 """
 from __future__ import annotations
 
-import asyncio
+import json
+import subprocess
+import sys
 import wave
 from pathlib import Path
 
-from .util import (DATA, ffprobe_duration, ffmpeg,
+from .util import (DATA, ROOT, ffprobe_duration, ffmpeg,
                    read_json, write_json)
 
 EDGE_CACHE = DATA / "edge_voices.json"
@@ -195,25 +197,74 @@ def _silent_wav(path: Path, seconds: float = 3.0) -> Path:
     return path
 
 
+_EDGE_LAST_ERROR = ""
+
+
+def edge_last_error() -> str:
+    """最近一次 edge 合成失败的原因（给日志和自检用，空串表示没出错）。"""
+    return _EDGE_LAST_ERROR
+
+
 def _edge_tts(text: str, out: Path, cfg: dict,
               voice: str = "", rate: str = "") -> bool:
-    """指定音色 / 语速合成；voice、rate 留空时读当前默认配置。"""
+    """指定音色 / 语速合成；voice、rate 留空时读当前默认配置。
+
+    asyncio 合成放在子进程里跑并用硬超时等：Windows 上部分 Python 构建建不出
+    本地回环（socket.socketpair 回退实现卡在 socket.accept），在主进程里直接
+    asyncio.run 会永久挂住，整条出片流程跟着死等。子进程超时就杀掉，只算这一段失败。
+    """
+    global _EDGE_LAST_ERROR
+    _EDGE_LAST_ERROR = ""
     try:
-        import edge_tts
+        import edge_tts  # noqa: F401  只用来确认依赖在，实际合成在子进程
     except ImportError:
+        _EDGE_LAST_ERROR = "未安装 edge-tts"
         return False
     v = voice or cfg["voice"].get("edge_voice") or DEFAULT_EDGE_VOICE
     r = rate or rate_str(cfg["voice"].get("speed", 1.0))
-
-    async def _go():
-        comm = edge_tts.Communicate(text, v, rate=r)
-        await comm.save(str(out))
-
     try:
-        asyncio.run(_go())
-        return out.exists() and out.stat().st_size > 1000
-    except Exception:
+        timeout = float(cfg["voice"].get("timeout") or 40)
+    except (TypeError, ValueError):
+        timeout = 40.0
+
+    job = {"text": text, "voice": v, "rate": r, "out": str(out)}
+    job_path = out.with_suffix(".job.json")
+    try:
+        job_path.write_text(json.dumps(job, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        _EDGE_LAST_ERROR = f"写不了合成任务文件：{job_path}"
         return False
+
+    # 用 -m 启动：脚本目录一旦落在 core\ 下会把 sys.path[0] 带偏，edge_tts 的
+    # 相对导入会报 "attempted relative import with no known parent package"。
+    cmd = [sys.executable, "-m", "core.edge_worker", str(job_path)]
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) if sys.platform == "win32" else 0
+    try:
+        proc = subprocess.run(cmd, capture_output=True, timeout=timeout,
+                              creationflags=flags, cwd=str(ROOT))
+    except subprocess.TimeoutExpired:
+        _EDGE_LAST_ERROR = f"edge-tts 合成超时（{timeout:.0f}s），已强制终止"
+        return False
+    except OSError as e:
+        _EDGE_LAST_ERROR = f"起不了合成子进程：{str(e)[:80]}"
+        return False
+    finally:
+        try:
+            job_path.unlink()
+        except OSError:
+            pass
+
+    if proc.returncode != 0:
+        tail = (proc.stderr or b"").decode("utf-8", "ignore").strip().splitlines()
+        why = f"退出码 {proc.returncode}"
+        if tail:
+            why += "：" + tail[-1][:100]
+        _EDGE_LAST_ERROR = f"edge-tts 合成失败（{why}）"
+        return False
+    ok = out.exists() and out.stat().st_size > 1000
+    if not ok:
+        _EDGE_LAST_ERROR = "edge-tts 没产出有效音频"
+    return ok
 
 
 def synthesize_preview(ref: str, text: str, out: Path, cfg: dict) -> dict:
@@ -230,7 +281,7 @@ def synthesize_preview(ref: str, text: str, out: Path, cfg: dict) -> dict:
         return {"ok": False, "engine": engine or "unknown", "error": "未知配音引擎"}
     ok = _edge_tts(text, out, cfg, voice=vid)
     return {"ok": bool(ok), "engine": engine,
-            "error": "" if ok else "edge-tts 合成失败（需要联网到微软语音服务）"}
+            "error": "" if ok else (edge_last_error() or "edge-tts 合成失败（需要联网到微软语音服务）")}
 
 
 def synthesize_scenes(script: dict, workdir: Path, cfg: dict, run=None) -> list[dict]:
@@ -244,6 +295,7 @@ def synthesize_scenes(script: dict, workdir: Path, cfg: dict, run=None) -> list[
     rate = rate_str(speed)   # 默认 edge 引擎的语速此前被忽略
     used_counts: dict[str, int] = {}
     results = []
+    edge_broken = False   # 一旦在线合成超时，剩余分镜不再一段段干等
 
     for scene in script["scenes"]:
         idx = scene["index"]
@@ -262,13 +314,25 @@ def synthesize_scenes(script: dict, workdir: Path, cfg: dict, run=None) -> list[
                 if run:
                     run.log(f"分镜 {idx} 离线配音失败：{str(e)[:100]}", "WARN")
         else:
-            try:
-                ok = _edge_tts(text, mp3, cfg, voice=edge_voice, rate=rate)
-                if ok:
-                    used = "edge-tts:" + (edge_voice or "default")
-            except Exception as e:
+            if edge_broken:
                 if run:
-                    run.log(f"分镜 {idx} edge-tts 失败：{str(e)[:80]}", "WARN")
+                    run.log(f"分镜 {idx} 跳过在线配音：本机在线合成通道已判定不可用", "WARN")
+            else:
+                try:
+                    ok = _edge_tts(text, mp3, cfg, voice=edge_voice, rate=rate)
+                    if ok:
+                        used = "edge-tts:" + (edge_voice or "default")
+                    else:
+                        why = edge_last_error() or "未知原因"
+                        if run:
+                            run.log(f"分镜 {idx} 在线配音失败：{why}，本段降级", "WARN")
+                        if "超时" in why:
+                            edge_broken = True
+                            if run:
+                                run.log("在线配音超时，本次剩余分镜不再逐段等待，请改用离线档或换解释器", "WARN")
+                except Exception as e:
+                    if run:
+                        run.log(f"分镜 {idx} edge-tts 异常：{str(e)[:80]}", "WARN")
         if ok and mp3.exists() and mp3.stat().st_size > 500:
             # 统一转 48k 单声道 wav，后续 ffmpeg 拼接无需重采样
             ffmpeg(["-i", str(mp3), "-ar", "48000", "-ac", "1", "-c:a", "pcm_s16le", str(wav)])

@@ -54,16 +54,27 @@ def probe() -> None:
     except Exception as e:
         checks.append(("抖音热榜", False, str(e)[:70]))
     from core.secrets import public_state
-    from core.voice import sapi_catalog
+    from core.voice import sapi_catalog, _edge_tts, edge_last_error
     zh = [x for x in sapi_catalog(force=True) if x.get("zh")]
     checks.append(("完全离线配音", bool(zh),
                    f"本机 {len(zh)} 个中文语音包（断网可用）" if zh
                    else "不可用：需 Windows + comtypes + 系统中文语音包"))
+    # 在线配音不能只看「装没装」，必须真合成一次：某些 Python 构建建不出本地回环，
+    # asyncio 会卡在 socket.accept，装得再全也出不了声。
     try:
         import edge_tts  # noqa: F401
-        checks.append(("免费在线配音", True, "edge-tts 已安装（需联网到微软）"))
     except ImportError:
         checks.append(("免费在线配音", False, "未安装 edge-tts → 仅离线档可用"))
+    else:
+        probe_mp3 = DATA / "tmp_edge_probe.mp3"
+        ok = _edge_tts("自检", probe_mp3, load_config())
+        detail = "实测合成成功（联网到微软语音服务正常）" if ok else \
+                 f"实测失败：{edge_last_error() or '未知原因'}"
+        checks.append(("免费在线配音", bool(ok), detail))
+        try:
+            probe_mp3.unlink()
+        except OSError:
+            pass
     from core.materials import scan_library
     lib = scan_library()
     checks.append(("真实视频素材库", bool(lib),
