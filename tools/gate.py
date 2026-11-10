@@ -5,13 +5,17 @@
     .venv\\Scripts\\python.exe tools\\gate.py --with-auth   # 加测抖音发布通道登录态
 
 四道关：
-  1. 单元测试全绿
-  2. 环境自检：11 项不许有 WARN（尤其「免费在线配音」必须实测成功，不是「装了没」）
-  3. 真出片：完整跑一条，超时即红
-  4. 成片体检：文件存在、>1MB、时长 >10s
+  1. 字节编译：core/web/tools/desktop/tests/run.py 全部 compileall（原云端 ci.yml 那步的
+     本地替代，且覆盖面更宽）
+  2. 单元测试全绿
+  3. 环境自检：11 项不许有 WARN（尤其「免费在线配音」必须实测成功，不是「装了没」）
+  4. 真出片：完整跑一条，超时即红
+  5. 成片体检：文件存在、>1MB、时长 >10s
 
-`--with-auth` 追加第五关：真起一次浏览器、访问创作者中心、拿到账号标识才算过
+`--with-auth` 追加一关：真起一次浏览器、访问创作者中心、拿到账号标识才算过
 （判据见 tools/auth_probe.py；看文件在不在不算证明）。
+
+本机门禁是唯一门禁：仓库里不允许出现 .github/workflows/*，云端 runner 一律不启用。
 """
 from __future__ import annotations
 
@@ -47,6 +51,26 @@ def run_step(name: str, args: list[str], timeout: int) -> tuple[bool, str]:
     detail = "退出码 0" if proc.returncode == 0 else f"退出码 {proc.returncode}：{_tail(err or out, 3)}"
     results.append((name, proc.returncode == 0, detail, time.time() - t0))
     return proc.returncode == 0, out
+
+
+def step_compile() -> None:
+    """字节编译：把原来只在云端 workflow 里跑的那一步挪到本机。
+
+    覆盖范围比原 ci.yml 更宽（它漏了 tools/desktop/tests），因为本地门禁是唯一门禁，
+    不能只测 core 和 web。
+    """
+    t0 = time.time()
+    targets = ["core", "web", "tools", "desktop", "tests", "run.py"]
+    try:
+        proc = subprocess.run([PY, "-m", "compileall", "-q", *targets],
+                              cwd=str(ROOT), capture_output=True, timeout=180)
+    except subprocess.TimeoutExpired:
+        results.append(("字节编译", False, "超时（上限 180s），已终止", 180.0))
+        return
+    out = (proc.stdout or b"").decode("utf-8", "ignore")
+    err = (proc.stderr or b"").decode("utf-8", "ignore")
+    detail = "全部通过" if proc.returncode == 0 else _tail(err or out, 4)
+    results.append(("字节编译", proc.returncode == 0, detail, time.time() - t0))
 
 
 def step_tests() -> None:
@@ -109,6 +133,7 @@ def main() -> int:
     print(f"门禁解释器：{PY}")
     import platform
     print(f"版本：{platform.python_version()}\n")
+    step_compile()
     step_tests()
     step_probe()
     step_render()
