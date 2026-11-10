@@ -53,6 +53,18 @@ def run_step(name: str, args: list[str], timeout: int) -> tuple[bool, str]:
     return proc.returncode == 0, out
 
 
+def step_no_cloud_ci() -> None:
+    """硬判据：仓库里出现 .github/workflows/*.yml 就是红。
+
+    这条不是形式主义 —— 2026-11-10 首次推仓库时，遗留的 ci.yml 一 push 就在 GitHub
+    云 runner 上排了一次队，只能手动取消。规矩写进代码，比记在脑子里可靠。
+    """
+    wf = ROOT / ".github" / "workflows"
+    found = sorted(p.name for p in wf.glob("*.y*ml")) if wf.exists() else []
+    detail = "本地门禁是唯一门禁" if not found else f"发现云端 workflow：{', '.join(found)}"
+    results.append(("禁用云端 CI", not found, detail, 0.0))
+
+
 def step_compile() -> None:
     """字节编译：把原来只在云端 workflow 里跑的那一步挪到本机。
 
@@ -133,6 +145,7 @@ def main() -> int:
     print(f"门禁解释器：{PY}")
     import platform
     print(f"版本：{platform.python_version()}\n")
+    step_no_cloud_ci()
     step_compile()
     step_tests()
     step_probe()
