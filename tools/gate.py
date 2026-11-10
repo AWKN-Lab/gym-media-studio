@@ -2,6 +2,7 @@
 
 用法（必须用工程自带运行时跑，它决定在线配音能不能出声）：
     .venv\\Scripts\\python.exe tools\\gate.py
+    .venv\\Scripts\\python.exe tools\\gate.py --with-auth   # 加测抖音发布通道登录态
 
 四道关：
   1. 单元测试全绿
@@ -9,7 +10,8 @@
   3. 真出片：完整跑一条，超时即红
   4. 成片体检：文件存在、>1MB、时长 >10s
 
-任何一关红都退出码 1，不许「跑完就算过」。
+`--with-auth` 追加第五关：真起一次浏览器、访问创作者中心、拿到账号标识才算过
+（判据见 tools/auth_probe.py；看文件在不在不算证明）。
 """
 from __future__ import annotations
 
@@ -87,13 +89,31 @@ def step_render() -> None:
     results.append(("成片体检", ok_media, detail, 0.0))
 
 
+def step_auth() -> None:
+    """可选关：抖音发布通道登录态。会弹一次 Chrome 窗口，所以默认不跑。"""
+    t0 = time.time()
+    try:
+        proc = subprocess.run([PY, "tools/auth_probe.py", "--quiet"], cwd=str(ROOT),
+                              capture_output=True, timeout=240)
+    except subprocess.TimeoutExpired:
+        results.append(("发布通道登录", False, "超时（上限 240s），已终止", 240.0))
+        return
+    out = (proc.stdout or b"").decode("utf-8", "ignore")
+    err = (proc.stderr or b"").decode("utf-8", "ignore")
+    results.append(("发布通道登录", proc.returncode == 0,
+                    _tail(out or err, 2) or f"退出码 {proc.returncode}", time.time() - t0))
+
+
 def main() -> int:
+    with_auth = "--with-auth" in sys.argv[1:]
     print(f"门禁解释器：{PY}")
     import platform
     print(f"版本：{platform.python_version()}\n")
     step_tests()
     step_probe()
     step_render()
+    if with_auth:
+        step_auth()
 
     print("\n=== 门禁结果 ===")
     failed = 0
