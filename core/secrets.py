@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 
+from .credentials import harden, needs_migration, seal, unseal
 from .util import DATA, http_get, http_post_json, read_json, write_json
 
 SECRETS_PATH = DATA / "secrets.json"
@@ -44,6 +45,12 @@ PROVIDERS = [
     {"key": "PIXABAY_API_KEY", "name": "Pixabay", "usage": "备用正版视频素材检索", "kind": "pixabay",
      "provider": "pixabay", "default_model": "", "need_model": False,
      "url": "https://pixabay.com/api/videos/", "apply": "https://pixabay.com/api/docs/"},
+    # 本机网关（Magpie / 喜鹊）自身的鉴权 token：只进密封存储，绝不写 config.json。
+    # 写入路径见 web/server.py /api/gateway/set；读取路径见 core/llm.py gateway_cfg。
+    # 连通测试不走这里的单项测试，用 /api/gateway/test（网关地址是用户自填的）。
+    {"key": "GATEWAY_MAGPIE_API_KEY", "name": "Magpie 网关", "usage": "本机网关鉴权",
+     "kind": "gateway", "provider": "gateway", "default_model": "", "need_model": False,
+     "url": "", "apply": ""},
 ]
 
 BY_KEY = {p["key"]: p for p in PROVIDERS}
@@ -57,6 +64,17 @@ def load_secrets() -> dict:
     # 出厂默认：不读取环境变量。旧字段 ignore_env 一律作废（不再作为开关）。
     d["allow_env"] = bool(d.get("allow_env", False))
     d.pop("ignore_env", None)
+    # 历史明文就地密封：读到无前缀的旧值就 seal 后写回，只在确实迁移时写盘。
+    migrated = False
+    for k, v in list(d["keys"].items()):
+        if isinstance(v, str) and needs_migration(v):
+            d["keys"][k] = seal(v)
+            migrated = True
+    if migrated:
+        write_json(SECRETS_PATH, d)
+        # GPT 第二次复核第 5 节第 2 项：迁移写盘后同步收紧权限，
+        # 与 save_secrets() 的落盘路径一致，不留 0644 的明文窗口。
+        harden(SECRETS_PATH)
     return d
 
 
@@ -69,7 +87,10 @@ def save_secrets(obj: dict) -> dict:
         if v == "__delete__":
             keys.pop(k, None)
         elif isinstance(v, str) and v.strip():
-            keys[k] = v.strip()
+            # 落盘前一律 seal()：Windows 走 DPAPI（DPAPI 不可用时 seal 直接报错，
+            # 拒绝静默降级）；非 Windows 记 plain:v1: 降级标记——那是 base64，
+            # 不是加密，只允许开发机用，绝不把明文写进 data/secrets.json。
+            keys[k] = seal(v.strip())
     for k, v in (obj.get("models") or {}).items():
         if isinstance(v, str):
             if v.strip():
@@ -83,6 +104,7 @@ def save_secrets(obj: dict) -> dict:
     cur.pop("ignore_env", None)
     cur["keys"], cur["models"] = keys, models
     write_json(SECRETS_PATH, cur)
+    harden(SECRETS_PATH)
     return cur
 
 
@@ -93,7 +115,7 @@ def get_secret(env_name: str) -> str:
     s = load_secrets()
     v = s["keys"].get(env_name, "")
     if v:
-        return v
+        return unseal(v)
     if not s.get("allow_env"):
         return ""
     return os.environ.get(env_name, "")
@@ -129,7 +151,7 @@ def public_state() -> list[dict]:
     allow = bool(s.get("allow_env"))
     out = []
     for p in PROVIDERS:
-        user_key = s["keys"].get(p["key"], "")
+        user_key = unseal(s["keys"].get(p["key"], ""))
         env_present = bool(os.environ.get(p["key"], ""))
         env_key = os.environ.get(p["key"], "") if allow else ""
         model = s["models"].get(p["provider"], "") or p["default_model"]
@@ -171,6 +193,10 @@ def test_connection(env_name: str, model: str = "") -> tuple[bool, str]:
             body = http_get(p["url"] + "?query=gym&per_page=1",
                             timeout=15, headers={"Authorization": key}).decode("utf-8", "ignore")
             return ("total_results" in body or "videos" in body), "素材检索可用（Pexels API 200）"
+
+        if kind == "gateway":
+            # 网关地址是用户自填的，这里没有固定 URL 可打；连通用 /api/gateway/test。
+            return False, "网关 Key 请用网关连通测试（/api/gateway/test）"
 
         if kind == "pixabay":
             body = http_get(f"{p['url']}?key={key}&q=gym&per_page=3", timeout=15)\

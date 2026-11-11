@@ -41,6 +41,17 @@ TOPIC = {
     "cover": "新手别踩的坑", "linked_hot": "", "hot_context": "",
 }
 
+# 无 H 句式的选题：有 H 句式时首镜不再叠锚点（2026-11-10 任务书定），
+# 锚点注入与“开头→钩子”顺序改用它验证。
+SLIM_TOPIC = {
+    "title": "减脂先记3天饮食再谈训练",
+    "kind": "evergreen",
+    "hook": "减脂先别加练，先记3天吃了什么",
+    "angle": "减脂饮食",
+    "hot_ref": "", "hot_score": 0, "platform": "常青选题库", "score": 6.0,
+    "cover": "先记3天", "linked_hot": "", "hot_context": "",
+}
+
 # 住址断言：口播 / 字幕里一旦出现即视为事实越界。
 RESIDENCE_CLAIM = re.compile(r"住(?:在)?[^\s，。、]{0,10}(?:公寓|小区|社区)")
 
@@ -80,13 +91,51 @@ class TestLocalCopyGate(unittest.TestCase):
         for marker in (self.local["transit"], self.local["district"],
                        self.local["cta_store"], self.local["tags_local"][0]):
             self.assertIn(marker, text, f"产物缺少 {marker}")
-        hook = s["scenes"][0]["narration"]
+        # 2026-11-10：TOPIC 命中 H4 句式，首镜不再叠锚点（任务书定，防首镜超 60 字）；
+        # 锚点注入改用无句式的选题验证同一门禁。
+        hook = llm.template_script(dict(SLIM_TOPIC), self.cfg)["scenes"][0]["narration"]
         self.assertTrue(any(a.strip("，, ") in hook
                             for a in self.local["audience_anchors"]),
                         f"产物未注入任何人群锚点：{hook}")
 
+    def test_h4_pattern_suppresses_anchor_stacking(self):
+        """GPT 复核 2026-11-10 第 7 项：TOPIC 命中 H4 句式时首镜是句式行，
+        不再叠锚点；但四处锚点来源（地铁站 / 城区 / 到店动作 / 同城标签）
+        仍须全进产物，来源数按实际配置验四项。"""
+        s = llm.template_script(dict(TOPIC), self.cfg)
+        first = s["scenes"][0]["narration"]
+        h4 = [p for p in llm.HOOK_PATTERNS if p["id"] == "H4"][0]["lines"]
+        self.assertTrue(any(first.startswith(x) for x in h4),
+                        f"H4 首镜不是句式行：{first}")
+        self.assertFalse(any(a.strip("，, ") in first
+                             for a in self.local["audience_anchors"]),
+                         f"H4 首镜叠了锚点：{first}")
+        markers = (self.local["transit"], self.local["district"],
+                   self.local["cta_store"], self.local["tags_local"][0])
+        self.assertEqual(len(markers), 4, "锚点来源须按实际配置为四项")
+        text = flatten(s)
+        for marker in markers:
+            self.assertIn(marker, text, f"产物缺少锚点来源 {marker}")
+
+    def test_h4_suppresses_explicit_anchor_but_keeps_four_markers(self):
+        """GPT 第二次复核第 1 项跟进：选题自带显式 audience_anchor 时，
+        H4 路径下首镜同样不叠它（抑制与保留一次钉死）；四处锚点来源
+        （地铁站 / 城区 / 到店动作 / 同城标签）仍须全进产物。"""
+        topic = dict(TOPIC, audience_anchor="在前浯站出来")
+        s = llm.template_script(topic, self.cfg)
+        first = s["scenes"][0]["narration"]
+        self.assertNotIn("在前浯站出来", first, f"H4 首镜叠了显式锚点：{first}")
+        markers = (self.local["transit"], self.local["district"],
+                   self.local["cta_store"], self.local["tags_local"][0])
+        text = flatten(s)
+        for marker in markers:
+            self.assertIn(marker, text, f"产物缺少锚点来源 {marker}")
+
     def test_off_equals_before_snapshot(self):
         before = read_json(BASE / "ab_before.json", {}) or {}
+        if not before:
+            # 作者真实快照不在仓库里时，用随仓的示例快照（由示例配置生成）。
+            before = read_json(ROOT / "tests" / "fixtures" / "ab_before.json", {}) or {}
         self.assertTrue(before, "缺少改前快照 ab_before.json")
         off = llm.template_script(dict(TOPIC), self.off)
         self.assertEqual(flatten(off), flatten(before),

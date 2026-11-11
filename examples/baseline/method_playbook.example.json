@@ -1,0 +1,456 @@
+{
+  "version": "2.0",
+  "generated_at": "2026-11-10T08:54:54+00:00",
+  "example_note": "示例数据，仅用于新 clone 跑通测试：原始卡片未随仓库入库，引文为占位，不是视频原文；真实方法库以 data/baseline/method_playbook.json 为准。",
+  "role": "参考素材方法库：把 B 端获客视频的可复用结构，转译为我方 C 端视频的素材方法",
+  "source": {
+    "file": "examples/baseline/method_playbook.example.json",
+    "keyword": "健身房 获客",
+    "cards_used": 22,
+    "cards_total_in_capture": 70,
+    "capture": "示例：原始卡片未随仓库入库"
+  },
+  "role_clarification": {
+    "reference_material": "B 端获客方法论：教我方如何把本地人变成到店客户",
+    "output_audience": "厦门翔安前浯片区潜在会员（C 端）；不假定其住在哪个小区",
+    "not": "不是把 B 端视频播给消费者看，也不是把参考素材受众当产出受众"
+  },
+  "script_skeleton": [
+    {
+      "step": 1,
+      "name": "3 秒点名「谁 + 在哪」",
+      "evidence_nos": [
+        1,
+        6
+      ],
+      "c_transfer": "在翔安前浯附近找健身房的，先别急着问年卡多少钱。",
+      "output_field": "scenes[0].narration / on_screen",
+      "evidence": [
+        {
+          "no": 1,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 6,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "name": "痛点落到具体阻力",
+      "evidence_nos": [
+        6,
+        14,
+        20
+      ],
+      "c_transfer": "怕一进门就被围着推卡，是很多人一直没进来的真实原因。",
+      "output_field": "scenes[1].narration",
+      "evidence": [
+        {
+          "no": 6,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 14,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 20,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "name": "给可数、可判断的方法",
+      "evidence_nos": [
+        4,
+        5,
+        19,
+        21,
+        22
+      ],
+      "c_transfer": "进馆先看这 3 个不用问销售也能自己确认的地方。",
+      "output_field": "scenes[2].narration / scenes[3].narration",
+      "evidence": [
+        {
+          "no": 4,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 5,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 19,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 21,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 22,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "name": "用实拍当证据，不靠话术",
+      "evidence_nos": [
+        11
+      ],
+      "c_transfer": "镜头从门口一路走到器械区，今天馆里什么样直接拍给你看。",
+      "output_field": "visual_prompt",
+      "evidence": [
+        {
+          "no": 11,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "step": 5,
+      "name": "行动落到到店 + 同城标签",
+      "evidence_nos": [
+        1,
+        17
+      ],
+      "c_transfer": "想直接来看看，4 号线前浯站出来就能到，先试一次单次体验。",
+      "output_field": "scenes[4].narration / caption",
+      "evidence": [
+        {
+          "no": 1,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        },
+        {
+          "no": 17,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    }
+  ],
+  "hook_patterns": [
+    {
+      "id": "H1",
+      "pattern": "否定一个默认动作，再给替代项",
+      "source_no": 1,
+      "c_rewrite": "不用先办卡，先来看一眼再决定。",
+      "use_when": "新手 / 怕被推卡 / 预算敏感",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "H2",
+      "pattern": "把「大主题」收成「一共就 N 点」",
+      "source_no": 6,
+      "c_rewrite": "判断一家馆适不适合你，其实就看 3 个细节。",
+      "use_when": "清单体 / 避坑 / 怎么选",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "H3",
+      "pattern": "反直觉提问：常见做法为什么反而挡人",
+      "source_no": 20,
+      "c_rewrite": "只拍大重量，为什么反而让第一次来的人不敢进门？",
+      "use_when": "小白 / 社恐 / 内容自筛",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "H4",
+      "pattern": "「最头疼的 X，其实不用这么难」",
+      "source_no": 14,
+      "c_rewrite": "第一次进健身房最怕的环节，其实两分钟就能走完。",
+      "use_when": "降低门槛",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "H5",
+      "pattern": "「一条视频讲清楚 X」的确定性承诺",
+      "source_no": 5,
+      "c_rewrite": "一条视频讲清楚，第一次进馆到底该先看什么。",
+      "use_when": "信息密度高的选题",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "H6",
+      "pattern": "「记住 N 点 / N 个指标」的可数框架",
+      "source_no": 21,
+      "c_rewrite": "记住这 4 点，第一次进馆就不会手足无措。",
+      "use_when": "教学 / 清单",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    }
+  ],
+  "topic_transfers": [
+    {
+      "id": "T1",
+      "from_no": 4,
+      "kind": "method_transfer",
+      "hook_mode": "self_contained",
+      "title": "进馆前先看这 5 个地方，比先问价格靠谱",
+      "cover": "进馆看 5 处",
+      "angle": "把「5 个标准化」从老板管理视角转译为消费者可自查的进馆清单",
+      "hook": "在翔安前浯附近找健身房的，进馆先别急着问年卡，看这 5 个地方就够。",
+      "source_kind": "method",
+      "source_label": "B 端获客卡片 · 健身房 获客",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "T2",
+      "from_no": 20,
+      "kind": "method_transfer",
+      "hook_mode": "self_contained",
+      "title": "只拍大重量，会把第一次来的人挡在门外",
+      "cover": "别只拍硬核",
+      "angle": "反直觉开头，明确小白与社恐同样适合，避免内容自我筛掉客群",
+      "hook": "在翔安找健身房时，刷到全是硬核大重量的视频，是不是反而觉得不敢进？",
+      "source_kind": "method",
+      "source_label": "B 端获客卡片 · 健身房 获客",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "T3",
+      "from_no": 11,
+      "kind": "method_transfer",
+      "hook_mode": "self_contained",
+      "title": "不用背词，带你从前浯站走到器械区",
+      "cover": "进门实拍",
+      "angle": "第一人称沉浸式实拍还原完整动线，把「真实在场」当证据",
+      "hook": "不用背词，镜头从 4 号线前浯站一路走到器械区，今天什么样直接看。",
+      "source_kind": "method",
+      "source_label": "B 端获客卡片 · 健身房 获客",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "T4",
+      "from_no": 22,
+      "kind": "method_transfer",
+      "hook_mode": "needs_anchor",
+      "title": "不看广告看细节：6 个自己就能确认的地方",
+      "cover": "6 个细节",
+      "angle": "把「6 个数据指标」从经营诊断转译为消费者可观察的判断标准",
+      "hook": "不想被话术带着走？这 6 个细节，进馆自己就能确认。",
+      "source_kind": "method",
+      "source_label": "B 端获客卡片 · 健身房 获客",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "T5",
+      "from_no": 5,
+      "kind": "method_transfer",
+      "hook_mode": "needs_anchor",
+      "title": "一条视频讲清楚，第一次进馆该看什么",
+      "cover": "一次讲清楚",
+      "angle": "高信息密度清单体，给确定性预期",
+      "hook": "一条视频讲清楚，第一次进健身房到底该先看什么。",
+      "source_kind": "method",
+      "source_label": "B 端获客卡片 · 健身房 获客",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "T6",
+      "from_no": 8,
+      "kind": "local_compare",
+      "hook_mode": "self_contained",
+      "title": "翔安健身房怎么选：先避开 3 个办卡坑",
+      "cover": "办卡先看坑",
+      "angle": "吸收同城「避坑 / 别被低价套餐套路」钩子，只讲通用判断标准，不点名不贬低同行",
+      "hook": "在翔安挑健身房，先别比谁更便宜，这 3 个坑更值得先避开。",
+      "source_kind": "local",
+      "source_label": "同城对标清单 · 翔安 健身房",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    },
+    {
+      "id": "T7",
+      "from_no": 6,
+      "kind": "local_compare",
+      "hook_mode": "needs_anchor",
+      "title": "一层一层走一遍：进馆动线实拍",
+      "cover": "动线实拍",
+      "angle": "吸收同城逐层探店的空间展示形式，改为我方第一人称动线实拍",
+      "hook": "从门口到器械区到底要走几步？带你一层一层走一遍。",
+      "source_kind": "local",
+      "source_label": "同城对标清单 · 翔安 健身房",
+      "source_quote": "示例引文（原始卡片未入库）",
+      "source_url": ""
+    }
+  ],
+  "formats": [
+    {
+      "id": "F1",
+      "name": "第一人称沉浸式实拍 / 不背词",
+      "source_kind": "method",
+      "source_no": 11,
+      "visual_prompt": "第一人称从地铁口推门进馆，沿前台到器械区一镜走完，不摆拍不解说",
+      "usable": true,
+      "evidence": [
+        {
+          "no": 11,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "id": "F2",
+      "name": "逐层 / 分区空间展示",
+      "source_kind": "local",
+      "source_no": 6,
+      "visual_prompt": "按进门顺序依次实拍前台、有氧区、力量区与淋浴区，每处给一个可验证细节",
+      "usable": true,
+      "evidence": [
+        {
+          "no": 6,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "同城对标清单 · 翔安 健身房"
+        }
+      ]
+    },
+    {
+      "id": "F3",
+      "name": "多店对比 / 锐评",
+      "source_kind": "local",
+      "source_no": 4,
+      "visual_prompt": "只拍我方场馆实拍，用可验证细节做对比说明，不出现同行店名与画面",
+      "usable": true,
+      "constraint": "只吸收形式，不点名、不贬低、不引用竞品评价",
+      "evidence": [
+        {
+          "no": 4,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "同城对标清单 · 翔安 健身房"
+        }
+      ]
+    },
+    {
+      "id": "F4",
+      "name": "新手教学特写",
+      "source_kind": "local",
+      "source_no": 17,
+      "visual_prompt": "单个动作侧面机位特写，关节角度清晰，配 9 字以内画面主文案",
+      "usable": true,
+      "evidence": [
+        {
+          "no": 17,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "同城对标清单 · 翔安 健身房"
+        }
+      ]
+    }
+  ],
+  "anti_patterns": [
+    {
+      "id": "A1",
+      "name": "只拍器械和大重量",
+      "source_no": 20,
+      "why": "会把第一次来的人和小白、社恐挡在门外，内容自己筛掉了客群",
+      "evidence": [
+        {
+          "no": 20,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "name": "追泛流量、内容飘在天上",
+      "source_no": 6,
+      "why": "不落在具体需求上，播放量不等于到店",
+      "evidence": [
+        {
+          "no": 6,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "name": "硬背词、表演式话术",
+      "source_no": 11,
+      "why": "距离感强，实拍证据比话术更能降低第一次进门的门槛",
+      "evidence": [
+        {
+          "no": 11,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "id": "A4",
+      "name": "只收评论、不给到店路径",
+      "source_no": 1,
+      "why": "线上互动没接到线下，本地标签和位置信息缺失",
+      "evidence": [
+        {
+          "no": 1,
+          "quote": "示例引文（原始卡片未入库）",
+          "url": "",
+          "source": "B 端获客卡片 · 健身房 获客"
+        }
+      ]
+    },
+    {
+      "id": "A5",
+      "name": "断言受众住在某小区",
+      "source_no": null,
+      "why": "门店周边客群不等于某个公寓住户，属于无证据的住址断言（用户 11-08 指出）",
+      "evidence": []
+    }
+  ],
+  "claim_policy": "价格、活动、时长、无推销等具体承诺不写进生成文案；须以门店当期公示为准",
+  "evidence_boundary": [
+    "有：22 条真实卡片标题与简介原文、编号可交叉验证、时长/点赞/作者/链接",
+    "无：视频逐字稿、视频内部画面与口播、投放转化数据",
+    "所有 c_rewrite / c_transfer / topic_transfers 均为我方转写创作，不是视频原文，也不代表视频内部确实这么讲",
+    "点赞数是卡片层公开读数，不同账号基数不同，不等于转化效果"
+  ]
+}
