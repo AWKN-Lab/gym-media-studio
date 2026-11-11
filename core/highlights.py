@@ -7,6 +7,7 @@ core/transcribe.py 的 segments 一致：[{"start", "end", "text"}]。
 """
 from __future__ import annotations
 
+import math
 import re
 
 # 连续窗口内相邻两段的最大间隔：隔得更远就是两段话，不拼成一个窗口。
@@ -23,6 +24,8 @@ def _clean(segments: list[dict] | None) -> list[dict]:
         try:
             start, end = float(s.get("start")), float(s.get("end"))
         except (TypeError, ValueError):
+            continue
+        if not (math.isfinite(start) and math.isfinite(end)):
             continue
         if end <= start or start < 0:
             continue

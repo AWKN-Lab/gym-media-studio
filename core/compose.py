@@ -232,19 +232,27 @@ def _word_timings(narration: str, start: float, duration: float,
     voices 里若带有真实词级时间戳（words: [{text, start, end}]，相对本镜起点），
     直接用，但先夹到 [0, duration] 区间内：完全越界的丢弃，越界部分截断，
     与上一条重叠的起点推到上一条结尾（GPT 第二次复核第 5 节第 3 项）；
+    乱序输入先按 (start, end) 排好序再算（GPT 第三次复核后续加固）；
     否则按字数比例估算（faster-whisper 转写时间戳可替换这份估算，
     见 core/transcribe.py 的 segments）。返回 [(start, end, text)]，
-    所有条目起止都在 [start, start+duration] 内、不重叠、末段结尾恒等于
-    start+duration。
+    所有条目起止都在 [start, start+duration] 内、不重叠；估算分支末段
+    结尾恒等于 start+duration，真实词级分支保留词间自然空白，末词未必
+    延伸到镜头结束。
     """
     if words:
-        rel = []
+        parsed = []
         for w in words:
             try:
                 ws, we = float(w["start"]), float(w["end"])
                 text = str(w["text"])
             except (KeyError, TypeError, ValueError):
                 continue
+            if not (math.isfinite(ws) and math.isfinite(we)):
+                continue
+            parsed.append((ws, we, text))
+        parsed.sort(key=lambda t: (t[0], t[1]))
+        rel = []
+        for ws, we, text in parsed:
             ws = max(0.0, min(ws, duration))
             we = max(0.0, min(we, duration))
             if we <= ws:

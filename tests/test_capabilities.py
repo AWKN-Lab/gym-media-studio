@@ -208,6 +208,22 @@ class TestHighlights(unittest.TestCase):
                     {"start": 5.0, "end": 3.0, "text": "坏"}]
         self.assertIsNone(highlights.pick_highlight(bad_only))
 
+    def test_nonfinite_segments_are_dropped(self):
+        """GPT 第三次复核后续加固：NaN / Infinity 时间戳的分段丢弃，
+        不让非有限值进入窗口计算；只剩无效段时返回 None。"""
+        segs = [
+            {"start": float("nan"), "end": 8.0, "text": "NaN 起点"},
+            {"start": 0.0, "end": float("inf"), "text": "无穷结尾"},
+            {"start": 0.0, "end": 8.0, "text": "深蹲膝盖为什么会疼？先看 2 个地方"},
+        ]
+        best = highlights.pick_highlight(segs, min_dur=8.0)
+        self.assertIsNotNone(best)
+        self.assertNotIn("NaN", best["text"])
+        self.assertNotIn("无穷", best["text"])
+        self.assertEqual((best["start"], best["end"]), (0.0, 8.0))
+        bad_only = [{"start": float("nan"), "end": 2.0, "text": "坏"}]
+        self.assertIsNone(highlights.pick_highlight(bad_only))
+
     def test_large_gap_not_bridged(self):
         """GPT 第二次复核第 5 节第 5 项：隔 60 秒的两段话不能拼成一个
         连续窗口；窗口只能取单侧。"""
@@ -292,6 +308,29 @@ class TestWordSrt(unittest.TestCase):
         self.assertEqual(spans[0], (0.0, 2.0, "你"))
         self.assertEqual(spans[1], (2.0, 3.0, "好"))
         self.assertEqual(len(spans), 2)
+
+    def test_unsorted_words_are_sorted_first(self):
+        """GPT 第三次复核后续加固：乱序传入的词级时间戳先按 (start, end)
+        排好序再算，不依赖调用方事先排好序。"""
+        words = [{"text": "好", "start": 2.0, "end": 3.0},
+                 {"text": "你", "start": 0.0, "end": 1.0},
+                 {"text": "世", "start": 1.0, "end": 2.0}]
+        spans = compose._word_timings("你好世界", 0.0, 4.0, words)
+        self.assertEqual([t for _, _, t in spans], ["你", "世", "好"])
+        self.assertEqual(spans[0], (0.0, 1.0, "你"))
+        self.assertEqual(spans[2], (2.0, 3.0, "好"))
+
+    def test_nonfinite_words_are_dropped(self):
+        """GPT 第三次复核后续加固：NaN / Infinity 时间戳的词丢弃，
+        不让非有限值污染时间轴；只剩无效词时回退估算分支。"""
+        words = [{"text": "你", "start": float("nan"), "end": 1.0},
+                 {"text": "好", "start": 1.0, "end": float("inf")},
+                 {"text": "世", "start": 2.0, "end": 3.0}]
+        spans = compose._word_timings("你好世界", 0.0, 4.0, words)
+        self.assertEqual(spans, [(2.0, 3.0, "世")])
+        bad_only = [{"text": "坏", "start": float("nan"), "end": 1.0}]
+        spans = compose._word_timings("一句话", 0.0, 2.0, bad_only)
+        self.assertEqual(spans, [(0.0, 2.0, "一句话")])
 
     def test_many_short_clauses_stay_in_range(self):
         """GPT 第二次复核第 5 节第 3 项：大量短句估算时，所有条目起止
