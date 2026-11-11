@@ -4,6 +4,18 @@
 往返一致（2026-11-08）。非 Windows 平台没有 DPAPI，此时**明确降级**为
 带标记的明文并收紧文件权限，绝不伪装成「已加密」。
 
+前缀语义（GPT 复核 2026-11-10 第 5 项，在此写死）：
+  - enc:v1:  —— DPAPI 真加密（仅 Windows）。is_encrypted() 为真。
+  - plain:v1: —— 非 Windows 开发降级标记：base64，可逆，**不是加密**。
+    只允许在没有 DPAPI 的开发机上落盘，is_encrypted() 为假；任何测试
+    不得把它当成“加密通过”。生产跑在 Windows 上，seal() 在 DPAPI
+    不可用时直接报错，拒绝静默降级；Linux 上 DPAPI 无法验证的部分，
+    须在 Windows 上验证，不得冒充已验证。
+
+生产标记（GPT 第二次复核 2026-11-11 第 5 节第 1 项）：
+  环境变量 LYNVOS_PRODUCTION=1/true/yes 置位时，seal() 在任何平台上
+  都不允许降级成 plain:v1:：Windows 上 DPAPI 不可用报错，非 Windows
+  直接报错。开发机默认不置位，仍可用 plain:v1: 降级标记。
 密文带版本前缀，便于鉴别；历史明文数据会在读取时自动迁移。
 """
 from __future__ import annotations
@@ -94,13 +106,37 @@ def protection_mode() -> str:
     return "dpapi-current-user" if _crypt32() is not None else "plaintext-0600"
 
 
+def is_encrypted(value: str) -> bool:
+    """只有 DPAPI 真加密才算加密。plain:v1: 是 base64 降级标记，不是加密。"""
+    return str(value or "").startswith(_ENC)
+
+
+def is_production() -> bool:
+    """生产标记：LYNVOS_PRODUCTION=1/true/yes 置位即生产环境。"""
+    return str(os.environ.get("LYNVOS_PRODUCTION", "")).strip().lower() in (
+        "1", "true", "yes")
+
+
 def seal(text: str) -> str:
-    """把凭据转成可安全落盘的字符串。空串原样返回。"""
+    """把凭据转成可安全落盘的字符串。空串原样返回。
+
+    Windows 上 DPAPI 不可用时直接报错，拒绝静默降级成明文；
+    非 Windows 上只有开发态才回退到 plain:v1: 开发降级标记，
+    生产标记置位时同样直接报错（GPT 第二次复核第 5 节第 1 项）。
+    """
     raw = str(text or "").encode("utf-8")
     if not raw:
         return ""
     blob = _protect(raw)
     if blob is None:
+        if os.name == "nt":
+            raise RuntimeError(
+                "DPAPI 不可用：Windows 生产环境拒绝把凭据存成明文，"
+                "请检查当前 Windows 用户凭据或重新配置")
+        if is_production():
+            raise RuntimeError(
+                "生产环境拒绝 plain:v1: 降级：非 Windows 生产机没有 DPAPI，"
+                "凭据不得以 base64 明文标记落盘，请改用 Windows 生产机")
         # 明确标记降级，避免以后被误读成「已加密」
         return _PLAIN + base64.b64encode(raw).decode("ascii")
     return _ENC + base64.b64encode(blob).decode("ascii")

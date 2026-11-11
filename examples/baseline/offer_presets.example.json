@@ -1,0 +1,104 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-11-10T08:54:54+00:00",
+  "example_note": "示例方案目录，仅用于新 clone 跑通测试：价格/活动/时长等具体承诺均为示例文案，未经门店书面确认；P2 故意含禁词，用于验证闸门拦下并回退。真实方案目录以 data/baseline/offer_presets.json 为准。",
+  "presets": [
+    {
+      "id": "P0_current",
+      "name": "当前执行口径",
+      "summary": "现行文案：本地锚点 + 通用痛点 + 到店动作，不写具体承诺",
+      "confirmed": false,
+      "confirmed_by": "",
+      "allows_specific_claims": false,
+      "source": "config.json local 段",
+      "valid": {
+        "from": "2026-11-01",
+        "until": ""
+      },
+      "slots": {
+        "opening": {},
+        "hook": {},
+        "body": {},
+        "closing": {}
+      }
+    },
+    {
+      "id": "P1_trial_first",
+      "name": "先评估再决定",
+      "summary": "先做一次体态评估，再决定怎么练；不写价格与活动",
+      "confirmed": false,
+      "confirmed_by": "",
+      "allows_specific_claims": false,
+      "source": "示例方案",
+      "valid": {
+        "from": "2026-11-01",
+        "until": ""
+      },
+      "slots": {
+        "opening": {
+          "anchors": [
+            "在前浯、南部新城一带上班",
+            "坐 4 号线到前浯站下车"
+          ],
+          "text": "{anchor}",
+          "on_screen": ""
+        },
+        "hook": {
+          "text": "在翔安前浯附近找健身房的，先别问年卡多少钱。",
+          "on_screen": "先别问年卡"
+        },
+        "body": {
+          "text": "先做一次体态评估，看看身体现在是什么状态。",
+          "on_screen": "先评估再决定"
+        },
+        "closing": {
+          "text": "先来试一次体态评估，看看适不适合你。",
+          "on_screen": "先评估"
+        }
+      }
+    },
+    {
+      "id": "P2_store_offer",
+      "name": "开业期体验价",
+      "summary": "含未确认具体承诺的示例方案，用于验证闸门拦下并回退",
+      "confirmed": false,
+      "confirmed_by": "",
+      "allows_specific_claims": false,
+      "source": "示例方案（未确认）",
+      "valid": {
+        "from": "2026-11-01",
+        "until": "2026-12-31"
+      },
+      "slots": {
+        "opening": {},
+        "hook": {
+          "text": "单次 9.9，不限时长，练一整天都行。",
+          "on_screen": "单次 9.9"
+        },
+        "body": {
+          "text": "单次 9.9，不推卡，随时来练。",
+          "on_screen": "随时来"
+        },
+        "closing": {
+          "text": "开业期单次 9.9，不限时长，随时来。",
+          "on_screen": "9.9 体验"
+        }
+      }
+    }
+  ],
+  "claim_gate": {
+    "banned_claims": [
+      "9.9",
+      "不限时长",
+      "练一整天",
+      "不推卡",
+      "随时来",
+      "引导办卡",
+      "不用排队"
+    ]
+  },
+  "evidence_boundary": [
+    "具体承诺（价格、活动、时长、无推销）须经门店书面确认后才可写入文案",
+    "未确认的具体承诺一律回退到 P0_current"
+  ]
+}

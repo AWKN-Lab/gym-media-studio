@@ -106,6 +106,15 @@ class BootstrapContract(unittest.TestCase):
         self.home = Path(self.td.name) / "home"
         _write(self.bundle / "web" / "index.html", "<html>v1</html>")
         _write(self.bundle / "config.json", '{"brand":{"name":"orig"}}')
+        # GPT 第二次复核第 5 节第 8 项：播种的是随包示例方法库，不是本机
+        # data/baseline；bundle 里留一份 data/baseline 文件当陷阱，
+        # 断言它绝不被播种。
+        _write(self.bundle / "examples" / "baseline" / "method_playbook.example.json",
+               '{"version":1}')
+        _write(self.bundle / "examples" / "baseline" / "offer_presets.example.json",
+               '{"presets":[]}')
+        _write(self.bundle / "examples" / "baseline" / "common_materials.example.json",
+               '{"faq":[]}')
         _write(self.bundle / "data" / "baseline" / "offer_presets.json", '{"presets":[]}')
         _write(self.bundle / "assets" / "fonts" / "a.ttf", b"font")
         _write(self.bundle / "assets" / "bgm" / "b.wav", b"wave")
@@ -123,9 +132,16 @@ class BootstrapContract(unittest.TestCase):
         rep = APP.bootstrap(self.bundle, self.home)
         self.assertEqual(rep["missing"], [])
         for rel in ("config.json", "web/index.html",
-                    "data/baseline/offer_presets.json", "assets/fonts/a.ttf",
+                    "examples/baseline/method_playbook.example.json",
+                    "examples/baseline/offer_presets.example.json",
+                    "examples/baseline/common_materials.example.json",
+                    "assets/fonts/a.ttf",
                     "assets/bgm/b.wav", "assets/gym/demo.mp4", "assets/logo.png"):
             self.assertTrue((self.home / rel).is_file(), f"缺少 {rel}")
+        # GPT 第二次复核第 5 节第 8 项：data/baseline 缺失时不报错，
+        # bundle 里即便有真实文件也不播种 —— 首次启动只播种示例文件。
+        self.assertFalse((self.home / "data" / "baseline" / "offer_presets.json").exists(),
+                         "data/baseline 真实文件被播种进用户目录")
         for rel in ("output", "data/transcripts", "data/runs", "assets/gym"):
             self.assertTrue((self.home / rel).is_dir(), f"缺少目录 {rel}")
         # 缓存目录：一个文件都不能进来
@@ -192,7 +208,12 @@ class SourceContract(unittest.TestCase):
 
     def test_spec_datas_are_explicit_and_exclude_cache_tree(self):
         spec = (ROOT / "desktop" / "sidecar" / "lynvos.spec").read_text(encoding="utf-8")
-        self.assertIn('"data" / "baseline"', spec)
+        # GPT 复核 2026-11-10 第 3 项：data/baseline 整个目录永不打包，
+        # 方法库只打包 examples/baseline 下的白名单示例文件。
+        self.assertNotIn('"data" / "baseline"', spec,
+                         "整包 data/baseline 会把本机真实素材打进安装包")
+        self.assertIn('"examples" / "baseline"', spec)
+        self.assertIn("common_materials.example.json", spec)
         self.assertIn('"web" / "index.html"', spec)
         self.assertNotIn('str(PROJECT / "data"), "data"', spec,
                          "整包 data/ 会把 864MB 浏览器缓存打进安装包")

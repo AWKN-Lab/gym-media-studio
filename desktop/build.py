@@ -13,7 +13,8 @@
     BUILD_REPORT.json               本轮构建读数
 
 纪律：构建产物只从白名单来。项目里 864MB 的抖音浏览器 profile / CDP 探针 /
-历史成片一律不进包 —— spec 的 datas 是显式四项，不写任何 data/ 通配。
+历史成片一律不进包 —— spec 的 datas 是显式白名单，不写任何 data/ 通配，
+data/baseline 整个目录永不进包。
 """
 from __future__ import annotations
 
@@ -181,9 +182,11 @@ def collect() -> dict:
 
 
 def forbidden_in_bundle() -> list[str]:
-    """清单门禁：安装包里绝不能出现抖音抓取留下的大缓存/探针。"""
+    """清单门禁：安装包里绝不能出现抖音抓取留下的大缓存/探针，
+    以及 data/baseline 下的真实素材（GPT 复核 2026-11-10 第 3 项：
+    真实 baseline 只活在本机，包里只许有 examples/baseline 示例文件）。"""
     bad = ("browser-profile", "_cdp_probe", "_pipe_probe", "data/runs",
-           "tmp_offline_probe", "voice_previews", "cmd.json")
+           "tmp_offline_probe", "voice_previews", "cmd.json", "data/baseline")
     hits = []
     for p in SIDECAR_DIR.rglob("*"):
         rel = p.relative_to(SIDECAR_DIR).as_posix()

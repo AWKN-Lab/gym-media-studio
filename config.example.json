@@ -1,0 +1,252 @@
+{
+  "_note": "示例配置：新 clone 后把本文件复制为 config.json 再按自己门店改，就能跑通全部测试；config.json 本身不入库。门店信息取自仓库 tools/local_copy.py 的 LOCAL_ANCHOR 与 tools/playbook.py 的转译库；价格、活动、时长等具体承诺一律不在示例里写实数。",
+  "brand": {
+    "cta": "来门店试一次",
+    "handle": "@凌扬运动",
+    "name": "凌扬运动",
+    "slogan": "科学训练"
+  },
+  "compliance": {
+    "external_api": false,
+    "local_banned": [
+      "保证",
+      "包瘦",
+      "最有效",
+      "100%",
+      "第一名",
+      "唯一",
+      "绝对",
+      "根治",
+      "治愈",
+      "永不反弹",
+      "躺瘦",
+      "月瘦30斤",
+      "一周暴瘦",
+      "国家级",
+      "顶级",
+      "特效",
+      "无副作用",
+      "彻底解决",
+      "医学证明",
+      "祖传",
+      "神器",
+      "药到",
+      "一定",
+      "千万别",
+      "后悔一辈子",
+      "智商税",
+      "百分百",
+      "包治"
+    ],
+    "soft_banned": [
+      "必须"
+    ]
+  },
+  "hotspot": {
+    "hot_search_cn_script": "",
+    "limit_per_source": 10,
+    "sources": [
+      "baidu",
+      "douyin",
+      "bilibili",
+      "toutiao",
+      "tieba",
+      "bilibili_sport"
+    ]
+  },
+  "llm": {
+    "providers": [],
+    "timeout": 90
+  },
+  "local": {
+    "anchor_tokens": [
+      "前浯",
+      "4 号线",
+      "翔安",
+      "凌扬",
+      "地铁"
+    ],
+    "audience_anchors": [
+      "在前浯、南部新城一带上班",
+      "坐 4 号线到前浯站下车",
+      "第一次进健身房，怕被推销",
+      "想先单次体验再决定",
+      "在新浦嘉园附近",
+      "从前浯站出来",
+      "在南部新城 TOD 一带活动",
+      "在金海路边上",
+      "从厦大翔安校区出来",
+      "在保利国贸沁园附近",
+      "在蓬莱路边上"
+    ],
+    "audience_segments": [
+      "在前浯、南部新城一带上班或活动的人",
+      "坐 4 号线到前浯站、想就近练的通勤人群",
+      "健身小白、社恐、怕被贴身推销的人",
+      "预算敏感、想先单次体验再决定的人"
+    ],
+    "city": "厦门",
+    "claim_policy": "价格、活动、时长、无推销等具体承诺不写进生成文案；须以门店当期公示为准",
+    "community": "浯家社区 / 浯家公寓（金海街道竹浦西里 14 号）",
+    "coverage": "周边 5 公里可到",
+    "cta_store": "先来店里看一眼",
+    "district": "翔安",
+    "enabled": true,
+    "local_topics": [
+      {
+        "angle": "把「5 个标准化」从老板管理视角转译为消费者可自查的进馆清单",
+        "cover": "进馆看 5 处",
+        "hook": "在翔安前浯附近找健身房的，进馆先别急着问年卡，看这 5 个地方就够。",
+        "hook_mode": "self_contained",
+        "id": "T1",
+        "kind": "method_transfer",
+        "title": "进馆前先看这 5 个地方，比先问价格靠谱"
+      },
+      {
+        "angle": "反直觉开头，明确小白与社恐同样适合，避免内容自我筛掉客群",
+        "cover": "别只拍硬核",
+        "hook": "在翔安找健身房时，刷到全是硬核大重量的视频，是不是反而觉得不敢进？",
+        "hook_mode": "self_contained",
+        "id": "T2",
+        "kind": "method_transfer",
+        "title": "只拍大重量，会把第一次来的人挡在门外"
+      },
+      {
+        "angle": "第一人称沉浸式实拍还原完整动线，把「真实在场」当证据",
+        "cover": "进门实拍",
+        "hook": "不用背词，镜头从 4 号线前浯站一路走到器械区，今天什么样直接看。",
+        "hook_mode": "self_contained",
+        "id": "T3",
+        "kind": "method_transfer",
+        "title": "不用背词，带你从前浯站走到器械区"
+      },
+      {
+        "angle": "把「6 个数据指标」从经营诊断转译为消费者可观察的判断标准",
+        "cover": "6 个细节",
+        "hook": "不想被话术带着走？这 6 个细节，进馆自己就能确认。",
+        "hook_mode": "needs_anchor",
+        "id": "T4",
+        "kind": "method_transfer",
+        "title": "不看广告看细节：6 个自己就能确认的地方"
+      },
+      {
+        "angle": "高信息密度清单体，给确定性预期",
+        "cover": "一次讲清楚",
+        "hook": "一条视频讲清楚，第一次进健身房到底该先看什么。",
+        "hook_mode": "needs_anchor",
+        "id": "T5",
+        "kind": "method_transfer",
+        "title": "一条视频讲清楚，第一次进馆该看什么"
+      },
+      {
+        "angle": "吸收同城「避坑 / 别被低价套餐套路」钩子，只讲通用判断标准，不点名不贬低同行",
+        "cover": "办卡先看坑",
+        "hook": "在翔安挑健身房，先别比谁更便宜，这 3 个坑更值得先避开。",
+        "hook_mode": "self_contained",
+        "id": "T6",
+        "kind": "local_compare",
+        "title": "翔安健身房怎么选：先避开 3 个办卡坑"
+      },
+      {
+        "angle": "吸收同城逐层探店的空间展示形式，改为我方第一人称动线实拍",
+        "cover": "动线实拍",
+        "hook": "从门口到器械区到底要走几步？带你一层一层走一遍。",
+        "hook_mode": "needs_anchor",
+        "id": "T7",
+        "kind": "local_compare",
+        "title": "一层一层走一遍：进馆动线实拍"
+      }
+    ],
+    "micro_area": "前浯",
+    "no_residence_claim": "用户 11-08 纠偏：不得断言受众住在某个小区或公寓",
+    "offer": {
+      "active": "P0_current",
+      "enabled": true,
+      "presets_source": "examples/baseline/offer_presets.example.json"
+    },
+    "pain_local": "怕一进门就被围着推卡，是很多人一直没进来的真实原因。",
+    "playbook": {
+      "benchmark_source": "examples/baseline/local_benchmark.example.json",
+      "enabled": true,
+      "method_source": "examples/baseline/method_playbook.example.json"
+    },
+    "store": "凌扬运动前浯健身工场",
+    "tags_local": [
+      "#翔安健身",
+      "#厦门健身"
+    ],
+    "transit": "地铁4号线前浯站"
+  },
+  "niche": {
+    "audience": "新手、上班族",
+    "evergreen_topics": [
+      {
+        "angle": "新手入门",
+        "cover": "别急着加片",
+        "hook": "第一次进健身房，别急着加片",
+        "title": "新手第一次进健身房该怎么练"
+      },
+      {
+        "angle": "体态",
+        "cover": "靠墙站30秒",
+        "hook": "靠墙站30秒，先测测你的圆肩",
+        "title": "圆肩驼背每天练什么"
+      },
+      {
+        "angle": "减脂",
+        "cover": "先记3天饮食",
+        "hook": "减脂先别加练，先记3天吃了什么",
+        "title": "减脂先记3天饮食再谈训练"
+      }
+    ],
+    "keywords": [
+      "健身",
+      "减肥",
+      "减脂",
+      "增肌",
+      "训练",
+      "肌肉",
+      "健身房",
+      "私教",
+      "体态",
+      "深蹲",
+      "硬拉",
+      "卧推",
+      "瑜伽",
+      "普拉提",
+      "马拉松",
+      "跑步",
+      "体脂",
+      "塑形",
+      "蛋白",
+      "热量",
+      "拉伸",
+      "撸铁",
+      "八段锦",
+      "熬夜",
+      "睡眠",
+      "久坐",
+      "饮食",
+      "外卖",
+      "控糖",
+      "健康",
+      "体检",
+      "亚健康",
+      "自律",
+      "打卡",
+      "降温",
+      "上班",
+      "加班",
+      "中年",
+      "走路",
+      "步数"
+    ],
+    "products": [
+      "体态评估"
+    ],
+    "tone": "口语化"
+  },
+  "video": {
+    "max_scenes": 5
+  }
+}

@@ -16,6 +16,7 @@ import os
 import re
 import threading
 import time
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
@@ -23,6 +24,8 @@ from .util import http_get_json, http_post_json, read_json, write_json, DATA
 from .secrets import get_secret, resolve_provider
 from .playbook import format_for, method_block, pick_anchor
 from .offer import audit as offer_audit, offer_block, slots as offer_slots
+from .hooks import pick_structure, structure_block, list_structures
+from .script_score import score_script
 
 SYSTEM_PROMPT = """你是一家连锁健身房的短视频编导，负责写 45~60 秒竖屏口播脚本。
 要求：
@@ -102,6 +105,24 @@ GENERIC_POINTS = [
 
 
 def _knowledge_for(topic: dict) -> list[dict]:
+    # 问答类选题：干货直接取这条问题的答案，不再按领域套同一套通用练法。
+    # 答案按顿号/逗号/句号切成条，前一半进第 3 镜，后一半进第 4 镜。
+    # 非字符串答案（数字/None 等）不硬拆，按无答案走通用路径（GPT 第二次复核第 3 节）。
+    ans = topic.get("answer")
+    if isinstance(ans, str) and ans.strip():
+        parts = [p.strip() for p in re.split(r"[、，；。：:]", ans)
+                 if p.strip()]
+        if len(parts) >= 2:
+            # 在最接近一半的位置切，两镜长短尽量均衡，不留 5 个字的碎镜。
+            total = sum(len(p) for p in parts)
+            acc, cums = 0, []
+            for p in parts[:-1]:
+                acc += len(p)
+                cums.append(acc)
+            cut = min(range(len(cums)),
+                      key=lambda i: abs(cums[i] - total / 2)) + 1
+            return [{"tag": parts[0][:8], "text": "、".join(parts[:cut])},
+                    {"tag": parts[cut][:8], "text": "、".join(parts[cut:])}]
     text = topic["title"] + topic.get("angle", "") + topic.get("hot_ref", "")
     for block in KNOWLEDGE:
         if any(k in text for k in block["keys"]):
@@ -111,13 +132,107 @@ def _knowledge_for(topic: dict) -> list[dict]:
 
 def _first_clause(text: str, limit: int) -> str:
     """取第一个完整句子，而不是粗暴截断字符。"""
-    head = re.split(r"[。！？!?\n]", text, maxsplit=1)[0].strip("，,、 ")
+    head = re.split(r"[。！？!?：:\n]", text, maxsplit=1)[0].strip("，,、 ")
     head = head.replace(" ", "")
     if len(head) <= limit:
         return head
     # 仍过长时按逗号等次级停顿断，保持语义完整
-    part = re.split(r"[，,；;]", head, maxsplit=1)[0]
+    part = re.split(r"[，,；;：:]", head, maxsplit=1)[0]
     return part[:limit] if len(part) > limit else part
+
+
+def _pain_line(topic: dict) -> str:
+    """痛点必须落到具体场景，不写通用鸡汤。选题自带 pain（用户自己的担心）
+    时先用 pain；没有才按关键词走领域分支；最后才是通用默认句。"""
+    if (topic.get("pain") or "").strip():
+        return topic["pain"].strip()
+    title = topic["title"] + topic.get("angle", "")
+    if any(k in title for k in ("减脂", "体重", "体脂", "瘦")):
+        return "连称 1 周，体重秤上的数字不动，就开始怀疑是不是练得不够狠。"
+    if any(k in title for k in ("圆肩", "驼背", "体态", "肩颈", "骨盆")):
+        return "坐 8 小时肩膀发紧，回家想拉伸，又不知道该拉哪块。"
+    if any(k in title for k in ("深蹲", "膝盖", "硬拉", "卧推", "动作")):
+        return "2 组 12 次还没做完，动作就变形了，自己还看不出来问题在哪。"
+    if any(k in title for k in ("推销",)):
+        return "想去健身房，又怕一进门就被围着推卡。"
+    if any(k in title for k in ("办卡", "年卡", "月卡", "次卡")):
+        return "办卡前最怕的不是价格，是交了钱退不掉。"
+    if any(k in title for k in ("新手", "第一次", "入门", "进健身房")):
+        return "进馆绕场一圈，器械认不全，最后只能去跑步机上走 30 分钟。"
+    return "练了几天没感觉，就开始怀疑这家馆到底适不适合自己。"
+
+
+# 热点切口桥接：开头第一句只借热点的势，讲完立刻回训练主题。
+# 每条 =（触发词，画面短句，桥接句）。画面短句是第一镜大字，必须是完整短语。
+# 桥接句用提问收尾——提问式钩子是爆款开头最稳的形态，也是打分里钩子公式的命中项。
+HOT_BRIDGES = (
+    (("股票", "A股", "指数", "大盘", "牛市"), "赚钱开心是一回事",
+     "赚钱开心是一回事，身体跟得上吗？"),
+    (("马拉松", "跑步", "奥运", "比赛"), "跑步的人越来越多",
+     "跑步的人越来越多，跑之前你做对了吗？"),
+    (("降温", "冷空气", "天冷", "下雪", "寒潮"), "天一冷",
+     "天一冷就有人拉伤，你热身够了吗？"),
+    (("健康", "体检", "睡眠", "熬夜"), "身体才是长期账户",
+     "身体才是长期账户，你今天存了吗？"),
+    (("吃", "外卖", "美食", "火锅"), "吃得开心",
+     "吃得开心，练跟得上吗？"),
+)
+
+
+# 钩子句式库 H1–H6：取自仓库方法库 tools/playbook.py（B 端获客卡片提炼，
+# c_rewrite 是我方转写，不是视频原文）。任务书定：口播钩子用这六种句式，
+# 不用热搜桥接。HOT_BRIDGES 只剩一个用途：topics.py 里筛 hook_hot 元数据
+#（文案“今日相关热点”那一行），不进首镜口播。
+# 2026-11-10 老板纠正：“不用先办卡”是商家口号、AI 味，没有用户思维。
+# 钩子只准写用户自己的担心或动作，必须点名具体的事（怕什么、看哪几处、
+# 带哪几样），不准写“不用 X”“其实就看 N 个细节”这种没点名的空话。
+# H1 的触发词收窄到推销/办卡，第一次进馆的选题改走 H4。
+HOOK_PATTERNS = (
+    {"id": "H1", "pattern": "说出用户最怕的事，再给用户自己的动作",
+     "lines": ("最怕一进门就被围着推卡，先走一圈再说。",
+               "进门先看一圈，不急着交钱。",
+               "先看更衣室和淋浴，合适再谈办卡。"),
+     "keys": ("怕被推销", "推销", "办卡")},
+    {"id": "H2", "pattern": "选馆先看能自己确认的地方，点名是哪几处",
+     "line": "选健身房，先看更衣室、淋浴间、停车场这 3 处。",
+     "keys": ("避坑", "挑健身房")},
+    {"id": "H3", "pattern": "反直觉提问：常见做法为什么反而挡人",
+     "line": "只拍大重量，为什么反而让第一次来的人不敢进门？",
+     "keys": ("社恐", "不敢进", "小白")},
+    {"id": "H4", "pattern": "说出第一次进馆最怕的事，钩子本身就是用户的担心",
+     "lines": ("第一次进馆，最怕不知道先干什么。",
+               "第一次进馆，最怕器械认不全，白跑一趟。",
+               "第一次进馆，最怕站在门口不知道往哪走。",
+               "第一次进馆，最怕人太多，器械要排队。"),
+     "keys": ("第一次", "入门", "流程")},
+    {"id": "H5", "pattern": "第一次进馆先看什么，点名是哪几处",
+     "line": "第一次进馆，先看器械、更衣室、淋浴间这 3 处。",
+     "keys": ("进馆", "该看什么", "先看")},
+    {"id": "H6", "pattern": "可数清单：点名是哪几样",
+     "line": "第一次进馆，记住这 4 样：水、毛巾、锁、手机存好菜单。",
+     "keys": ("清单", "教学")},
+)
+
+
+def _pattern_line(pat: dict, topic: dict) -> str:
+    """同一句式有多条写法时，按标题稳定轮换，不让一句话开半批视频的头。
+    上一轮的教训：H4 只有一句话，10 条稿子首镜一模一样，换了词没换结构。
+    crc32 保证同一选题每次取到同一条，不同选题分到不同条。"""
+    lines = pat.get("lines")
+    if not lines:
+        return pat["line"]
+    n = zlib.crc32(topic.get("title", "").encode("utf-8")) % len(lines)
+    return lines[n]
+
+
+def _hook_pattern_for(topic: dict) -> dict | None:
+    """按选题关键词选一条钩子句式；教学类选题（减脂、体态）没有对应的句式时返回空，
+    首镜只用选题自己的钩子，不硬套。"""
+    text = topic["title"] + topic.get("angle", "")
+    for p in HOOK_PATTERNS:
+        if any(k in text for k in p["keys"]):
+            return p
+    return None
 
 
 def _short(text: str, n: int) -> str:
@@ -135,8 +250,12 @@ def template_script(topic: dict, cfg: dict) -> dict:
     local = _local_cfg(cfg)
     pts = _knowledge_for(topic)
     hook = topic["hook"]
-    pain = (f"{niche['audience'].split('、')[0]}最容易卡在这一步："
-            "不是不努力，是一开始方向就选偏了。")
+    pain = _pain_line(topic)
+    # 任务书定：口播钩子用仓库方法库 H1–H6，不用热搜桥接。热搜只留在
+    # 文案的“今日相关热点”一行里当标签，不进首镜口播。
+    pat = _hook_pattern_for(topic)
+    if pat:
+        hook = f"{_pattern_line(pat, topic)}{hook}"
     if topic["kind"] == "hot_direct":
         pain = f"「{topic['hot_ref'][:14]}」讨论得很热闹，但落到普通人身上，真正该问的是怎么开始。"
     cta = (f"{brand['cta']}。想要更稳的做法，{brand['name']}可以先给你做一次体态评估。")
@@ -168,24 +287,38 @@ def template_script(topic: dict, cfg: dict) -> dict:
             else:
                 anchor = topic.get("audience_anchor") or pick_anchor(topic, local)
             anchor = anchor.strip("，, ")
-            if anchor:
+            if anchor and not pat:
+                # 有 H 句式时不再叠锚点：锚点 + 句式 + 主钩子三段叠起来首镜超 60 字。
                 head = (op.get("text") or "{anchor}").replace("{anchor}", anchor).strip("，, ")
                 hook = f"{head}，{hook}"
         local_pain = (bd.get("text") or local.get("pain_local") or "").strip()
-        if local_pain:
+        if local_pain and not (topic.get("pain") or "").strip():
+            # 选题自带问题痛点时不准用本地通用痛点覆盖，否则问题痛点到不了产物。
             pain = (f"{pain}。{local_pain}" if topic["kind"] == "hot_direct"
                     else local_pain)
         store_cta = (cl.get("text") or local.get("cta_store") or "").strip("。 ")
-        cta = f"{brand['cta']}。{store_cta}。"
+        # 收尾不再三条一样：先复述本条干货要点，再给到店动作和地铁站。
+        # “4 号线前浯站出来就能到”是仓库选题转译库 T5 自己的说法，不是现编的。
+        takeaway = ""
+        if len(pts) > 1:
+            takeaway = (topic.get("takeaway") or pts[1].get("tag") or "").strip("。 ")
+        transit = (local.get("transit") or "").strip()
+        if takeaway and store_cta and transit:
+            cta = f"{takeaway}。{store_cta}，{transit}出来就能到。"
+        elif takeaway and store_cta:
+            cta = f"{takeaway}。{store_cta}。"
+        else:
+            cta = f"{brand['cta']}。{store_cta}。"
 
     narrations = [hook, pain, pts[0]["text"], pts[1]["text"], cta]
+    _pain_parts = [p for p in re.split(r"[，,。]", pain) if p.strip()]
     on_screens = [
-        (hk.get("on_screen") or topic.get("hook_short") or _first_clause(hook, 9)), "问题不在意志力",
+        (hk.get("on_screen") or topic.get("hook_short") or _first_clause(hook, 9)), _first_clause(pain, 9),
         pts[0]["tag"], pts[1]["tag"], "现在就开始",
     ]
     subs = [
         f"{brand['name']} · 60 秒讲清楚",
-        "先别急着加练 / 加量 / 买装备",
+        _pain_parts[1].strip() if len(_pain_parts) > 1 else pts[0]["tag"],
         _first_clause(pts[0]["text"], 18),
         _first_clause(pts[1]["text"], 18),
         brand["slogan"],
@@ -198,6 +331,8 @@ def template_script(topic: dict, cfg: dict) -> dict:
         "教练面对镜头微笑收尾，门店 logo 虚化在背景",
     ]
     if local:
+        # 内容大字默认取方案位 on_screen；没有方案位时用 _raw 的同一默认值
+        # “怕被推卡？”，而不是从痛点现推——否则只关 offer 就对不上 P0 的现行产物。
         on_screens[1] = bd.get("on_screen") or "怕被推卡？"
         on_screens[4] = cl.get("on_screen") or "先试一次"
         subs[0] = f"{local.get('district', '')} · 60 秒讲清楚"
@@ -213,7 +348,7 @@ def template_script(topic: dict, cfg: dict) -> dict:
         "sub": subs[i], "visual_prompt": visual[i],
     } for i in range(5)]
 
-    cover = topic.get("cover") or _first_clause(topic["title"], 9)
+    cover = topic.get("cover") or _first_clause(topic.get("hook", ""), 9) or _first_clause(topic["title"], 9)
     linked = topic.get("linked_hot", "")
     hot_line = f"\n今日相关热点：{linked[:20]}" if linked else ""
     tags = "#健身 #健身房 #科学训练 #新手健身 #体态管理"
@@ -221,9 +356,11 @@ def template_script(topic: dict, cfg: dict) -> dict:
     if local:
         # P5：同城标签与门店位置接住本地分发；具体价格/活动不写进文案。
         tags += " " + " ".join(local.get("tags_local") or [])
+        store_line = f"门店：{local.get('store', '')} · {local.get('transit', '')}"
+        if local.get("coverage"):
+            store_line += f" · {local.get('coverage')}"
         cta_lines = [brand["cta"], cl.get("text") or local.get("cta_store", ""),
-                     brand["handle"],
-                     f"门店：{local.get('store', '')} · {local.get('transit', '')}"]
+                     brand["handle"], store_line]
     caption = (f"{topic['title']}\n\n{hook}\n\n{pts[0]['text'][:44]}……{hot_line}\n\n"
                + "\n".join(cta_lines) + f"\n\n{tags}")
     return {
@@ -258,9 +395,14 @@ def gateway_cfg(cfg: dict) -> dict:
     g.setdefault("name", "Magpie 喜鹊")
     g.setdefault("base_url", "http://127.0.0.1:3425/v1")
     g.setdefault("model", "")
-    g.setdefault("api_key", "")
     g.setdefault("prefer_free", True)
     g["base_url"] = str(g["base_url"]).rstrip("/")
+    # 密钥只走密封存储（H3 闭环，GPT 复核 2026-11-10 第 4 项）：
+    # 新写路径见 web/server.py /api/gateway/set，只调 save_secrets()；
+    # config.json 里残留的旧明文 api_key 只作一次性迁移兼容读，下次保存即清掉，
+    # 绝不把它当成长期存放位置。
+    legacy = str(g.pop("api_key", "") or "").strip()
+    g["api_key"] = get_secret("GATEWAY_MAGPIE_API_KEY") or legacy
     return g
 
 
@@ -450,7 +592,8 @@ def available_providers(cfg: dict, run=None, force: bool = False) -> list[dict]:
     return out
 
 
-def _llm_script(topic: dict, cfg: dict, providers: list[dict], run=None) -> dict | None:
+def _llm_script(topic: dict, cfg: dict, providers: list[dict], run=None,
+                structure: str | None = None) -> dict | None:
     local = _local_cfg(cfg)
     # 「到店动作 / 承诺口径」也必须跟当前方案走，否则切换后 LLM 会同时收到
     # 旧 cta_store 与新结尾两套互相矛盾的口径。
@@ -474,6 +617,8 @@ def _llm_script(topic: dict, cfg: dict, providers: list[dict], run=None) -> dict
             f"\n当前执行的承诺方案（按结构）：\n{offer_block(cfg)}"
             f"\n住址口径：{local.get('no_residence_claim', '')}"
         )
+        if local.get("coverage"):
+            local_block += f"\n覆盖范围：{local.get('coverage')}"
         pb = method_block(cfg)
         if pb:
             local_block += "\n" + pb
@@ -485,10 +630,14 @@ def _llm_script(topic: dict, cfg: dict, providers: list[dict], run=None) -> dict
             f"切入点：{topic['angle']}\n"
             f"热点原文（若为空则为常青选题）：{topic.get('hot_ref','')}\n"
             f"今日健身垂类热点（可作开头引子，内容主体仍需给可执行的专业建议）：{topic.get('hot_context','无')}\n"
+            f"今日全网热点切口（只作开头第一句钩子，讲完立刻回训练主题；无则不用）：{(topic.get('hook_hot') or {}).get('title', '') or '无'}\n"
             f"收尾引导：{cfg['brand']['cta']}\n"
             + local_block +
             "请输出 5 个分镜的严格 JSON。")
     system = SYSTEM_PROMPT + (LOCAL_SYSTEM_ADDON if local else "")
+    # 结构块只追加，不改 SYSTEM_PROMPT 与合规要求（合规闸在 generate_scripts 后照常跑）。
+    if structure:
+        system += "\n\n脚本结构（本次选用）:\n" + structure_block(structure, cfg)
     for p in providers:
         key = get_secret(p["key_env"]) if p.get("key_env") else p.get("api_key", "")
         headers = {"Authorization": "Bearer " + key} if key else {}
@@ -516,6 +665,8 @@ def _llm_script(topic: dict, cfg: dict, providers: list[dict], run=None) -> dict
             script["scenes"] = scenes
             script["cover_text"] = str(script.get("cover_text", ""))[:10]
             script["generator"] = "llm:" + (p["model"] if p["name"].startswith("gateway") else p["name"])
+            if structure:
+                script["structure"] = structure
             script["topic"] = topic
             script["offer_audit"] = offer_audit(cfg)
             if run:
@@ -528,6 +679,44 @@ def _llm_script(topic: dict, cfg: dict, providers: list[dict], run=None) -> dict
     return None
 
 
+def generate_script_variants(topic: dict, cfg: dict, providers: list[dict],
+                             run=None, count: int = 3) -> tuple[dict | None, list[dict]]:
+    """一次生成多版、打分选优：按选题稳定选首选结构，再轮换其余结构补齐 count 版。
+
+    每版过 score_script（钩子/信息密度/口语度/合规），取总分最高者；分低的版不直接丢，
+    记进 scored 供复核。任一版失败只记日志，不中断其余版。
+    返回 (最佳脚本或 None, [{"structure", "score"}...])。
+    """
+    first = pick_structure(topic, cfg)
+    ordered = [first] + [s["id"] for s in list_structures(cfg) if s["id"] != first]
+    best: dict | None = None
+    best_score = -1
+    scored: list[dict] = []
+    for structure in ordered[:max(1, count)]:
+        script = _llm_script(topic, cfg, providers, run, structure=structure)
+        if script is None:
+            scored.append({"structure": structure, "score": None})
+            continue
+        sc = score_script(script)
+        script["score"] = sc
+        scored.append({"structure": structure, "score": sc["total"]})
+        if run:
+            run.log(f"脚本候选 [{structure}] 打分 {sc['total']}/100"
+                    + (f"（{'; '.join(sc['issues'][:2])}）" if sc["issues"] else ""))
+        if sc["total"] > best_score:
+            best, best_score = script, sc["total"]
+    return best, scored
+
+
+def mark_template_fallback(script: dict, attempted_llm: bool) -> dict:
+    """模板兜底标记：LLM 尝试过但全失败 → 待人工复核；无可用模型时只是标明来源，不标待审。"""
+    script["fallback"] = {
+        "reason": "llm_failed" if attempted_llm else "no_provider",
+        "needs_review": bool(attempted_llm),
+    }
+    return script
+
+
 def generate_scripts(topics: list[dict], cfg: dict, run=None) -> list[dict]:
     providers = available_providers(cfg, run)
     if run:
@@ -535,9 +724,15 @@ def generate_scripts(topics: list[dict], cfg: dict, run=None) -> list[dict]:
                 + ("（首选本地网关，零密钥）" if providers and providers[0]["name"].startswith("gateway") else ""))
     scripts = []
     for t in topics:
-        script = _llm_script(t, cfg, providers, run) if providers else None
+        script = None
+        if providers:
+            script, scored = generate_script_variants(t, cfg, providers, run)
+            if run and script is not None:
+                run.log(f"脚本选优：{script.get('structure', '?')} "
+                        f"{script.get('score', {}).get('total', '?')}/100")
         if script is None:
             script = template_script(t, cfg)
+            mark_template_fallback(script, attempted_llm=bool(providers))
         from .compliance import check_and_fix
         script = check_and_fix(script, cfg, run)
         scripts.append(script)

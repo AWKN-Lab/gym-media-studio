@@ -31,6 +31,8 @@ from .paths import bundle_root, default_user_home, is_packaged, runtime_root  # 
 ROOT = runtime_root()
 BUNDLE_ROOT = bundle_root()
 CONFIG_PATH = ROOT / "config.json"
+EXAMPLE_CONFIG_PATH = ROOT / "config.example.json"
+_FALLBACK_NOTICED = False
 DATA = ROOT / "data"
 OUTPUT = ROOT / "output"
 ASSETS = ROOT / "assets"
@@ -65,14 +67,70 @@ def font_path(bold: bool = True) -> str:
     return str(_FONT_CANDIDATES[0])
 
 
+def _minimal_default_config() -> dict:
+    """连示例配置都没有时的最小默认：只够跑通无本地模式，不含任何门店信息。
+
+    品牌名用中性占位，不写真实门店名（GPT 第二次复核第 3 节）。"""
+    return {
+        "brand": {"name": "示例健身房", "slogan": "科学训练",
+                  "cta": "来门店试一次", "handle": "@示例健身房"},
+        "niche": {"audience": "新手、上班族", "products": ["体态评估"],
+                  "tone": "口语化", "keywords": [], "evergreen_topics": []},
+        "video": {"max_scenes": 5},
+        "compliance": {"local_banned": ["保证", "包瘦", "最有效", "100%"],
+                       "soft_banned": ["必须"], "external_api": False},
+        "llm": {"providers": []},
+        "hotspot": {"sources": [], "limit_per_source": 10, "hot_search_cn_script": ""},
+        "local": {},
+    }
+
+
 def load_config() -> dict:
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """config.json 不存在时回退到 config.example.json（新 clone 可直接跑），
+    并打印一次明确提示；示例也没有时用内置最小默认，绝不直接崩。
+
+    配置文件损坏（JSON 解析失败）时同样回退并打印警告，不硬崩
+    （GPT 第二次复核第 3 节：配置损坏缺少结构校验）。"""
+    global _FALLBACK_NOTICED
+    if CONFIG_PATH.exists():
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"警告：config.json 已损坏（{type(e).__name__}），"
+                  "改用 config.example.json；请修复或删除 config.json 后重配。")
+    if EXAMPLE_CONFIG_PATH.exists():
+        if not _FALLBACK_NOTICED:
+            print("提示：未找到 config.json，已使用 config.example.json（示例配置）；"
+                  "正式使用请复制为 config.json 再按自己门店修改。")
+            _FALLBACK_NOTICED = True
+        try:
+            with open(EXAMPLE_CONFIG_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"警告：config.example.json 已损坏（{type(e).__name__}），"
+                  "改用内置最小默认配置。")
+    if not _FALLBACK_NOTICED:
+        print("提示：config.json 与 config.example.json 都不存在，已使用内置最小默认配置。")
+        _FALLBACK_NOTICED = True
+    return _minimal_default_config()
 
 
 def save_config(cfg: dict) -> None:
-    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, ensure_ascii=False, indent=2)
+    """原子保存：先写同目录临时文件，再 os.replace 替换 —— 保存中途失败
+    （进程崩溃、磁盘满）也不会留半截 config.json；写锁保证同一进程内
+    并发保存串行化（GPT 第二次复核第 5 节第 3 项的回滚跟进）。"""
+    tmp = CONFIG_PATH.with_name(CONFIG_PATH.name + ".tmp")
+    with _WRITE_LOCK:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        try:
+            os.replace(tmp, CONFIG_PATH)
+        except OSError:
+            # 替换失败时删掉临时文件再抛错：原 config.json 原样不动，
+            # 不留半截文件（GPT 第二次复核第 5 节第 3 项的回滚跟进）。
+            tmp.unlink(missing_ok=True)
+            raise
 
 
 def read_json(path, default=None):

@@ -39,7 +39,28 @@ TOPIC = {
     "hot_ref": "", "hot_score": 0, "platform": "常青选题库", "score": 6.0,
     "cover": "新手别踩的坑", "linked_hot": "", "hot_context": "",
 }
+
+# 无 H 句式的选题：有 H 句式时首镜不再叠锚点（2026-11-10 任务书定），
+# 锚点注入与“开头→钩子”顺序改用它验证。
+SLIM_TOPIC = {
+    "title": "减脂先记3天饮食再谈训练",
+    "kind": "evergreen",
+    "hook": "减脂先别加练，先记3天吃了什么",
+    "angle": "减脂饮食",
+    "hot_ref": "", "hot_score": 0, "platform": "常青选题库", "score": 6.0,
+    "cover": "先记3天", "linked_hot": "", "hot_context": "",
+}
 RESIDENCE_CLAIM = re.compile(r"住(?:在)?[^\s，。、]{0,10}(?:公寓|小区|社区)")
+
+
+def expected_closing(script: dict, cfg: dict, store_cta: str) -> str:
+    """按模板实际结构拼第 5 镜口播全文：干货要点在前（第 4 镜画面字，
+    与模板里 takeaway = pts[1] 的 tag 同源）、结尾句在中间、地铁到站句收尾。
+    GPT 第二次复核第 5 节第 7 项要求验整段等值；上轮建议的“结尾句在开头”
+    写法与模板结构不符，不用。"""
+    takeaway = script["scenes"][3]["on_screen"].strip("。 ")
+    return (f"{takeaway}。{store_cta.strip('。 ')}，"
+            f"{cfg['local']['transit']}出来就能到。")
 
 
 def cfg_with(cfg: dict, active: str = "", **overrides) -> dict:
@@ -91,7 +112,9 @@ class TestOfferStructure(unittest.TestCase):
         self.assertIn(local["pain_local"], s["scenes"][1]["narration"])
         self.assertEqual(s["scenes"][1]["on_screen"], "怕被推卡？")
         self.assertEqual(s["scenes"][4]["on_screen"], "先试一次")
-        self.assertTrue(any(a.strip("，, ") in s["scenes"][0]["narration"]
+        # 2026-11-10：TOPIC 命中 H4 句式，首镜不再叠锚点；锚点注入改用无句式的选题验证。
+        slim = llm.template_script(dict(SLIM_TOPIC), self.cfg)
+        self.assertTrue(any(a.strip("，, ") in slim["scenes"][0]["narration"]
                             for a in local["audience_anchors"]))
         before = read_json(BASE / "ab_after.json", {}) or {}
         if before:
@@ -100,8 +123,9 @@ class TestOfferStructure(unittest.TestCase):
 
     # ---------------------------------------------------------------- 整套可换
     def test_switching_preset_changes_all_four_slots(self):
-        p0 = llm.template_script(dict(TOPIC), self.cfg)
-        p1 = llm.template_script(dict(TOPIC), cfg_with(self.cfg, "P1_trial_first"))
+        # 2026-11-10：TOPIC 命中 H4 句式，首镜不再叠锚点，改用无句式的选题验四结构位。
+        p0 = llm.template_script(dict(SLIM_TOPIC), self.cfg)
+        p1 = llm.template_script(dict(SLIM_TOPIC), cfg_with(self.cfg, "P1_trial_first"))
         p1offer = active_offer(cfg_with(self.cfg, "P1_trial_first"))
         s1 = p1offer["slots"]
 
@@ -115,16 +139,22 @@ class TestOfferStructure(unittest.TestCase):
         # 内容 / 结尾：口播、画面大字、caption CTA 三处都换
         self.assertEqual(p1["scenes"][1]["narration"], s1["body"]["text"])
         self.assertEqual(p1["scenes"][1]["on_screen"], s1["body"]["on_screen"])
-        self.assertIn(s1["closing"]["text"], p1["scenes"][4]["narration"])
-        self.assertEqual(p1["scenes"][4]["on_screen"], s1["closing"]["on_screen"])
         self.assertIn(s1["closing"]["text"], p1["caption"])
+        self.assertEqual(p1["scenes"][4]["on_screen"], s1["closing"]["on_screen"])
+        # 收尾口播是精确拼接：结尾句末的 。 剥掉，再接“，地铁4号线前浯站出来就能到”。
+        # 断言整段拼接原文，不只断言去尾标的子串（GPT 复核 2026-11-10 第 7 项）。
+        splice = (s1["closing"]["text"].rstrip("。") + "，"
+                  + self.cfg["local"]["transit"] + "出来就能到")
+        self.assertIn(splice, p1["scenes"][4]["narration"])
+        self.assertTrue(p1["scenes"][4]["narration"].endswith("出来就能到。"))
         self.assertNotIn(self.cfg["local"]["cta_store"], p1["caption"])
         self.assertEqual(p1["offer_audit"]["active"], "P1_trial_first")
         self.assertNotEqual(flat(p0), flat(p1))
 
     def test_opening_comes_before_hook(self):
         """结构顺序：开头点名在最前，钩子口径在其后，主钩子最后。"""
-        p1 = llm.template_script(dict(TOPIC), cfg_with(self.cfg, "P1_trial_first"))
+        # 2026-11-10：TOPIC 命中 H4 句式，首镜不再叠锚点，改用无句式的选题验顺序。
+        p1 = llm.template_script(dict(SLIM_TOPIC), cfg_with(self.cfg, "P1_trial_first"))
         head = p1["scenes"][0]["narration"]
         s1 = active_offer(cfg_with(self.cfg, "P1_trial_first"))["slots"]
         positions = [head.find(a.strip("，, ")) for a in s1["opening"]["anchors"]
@@ -132,7 +162,7 @@ class TestOfferStructure(unittest.TestCase):
         self.assertTrue(positions, f"开头未使用当前方案锚点：{head}")
         anchor_pos = min(positions)
         self.assertLess(anchor_pos, head.find(s1["hook"]["text"]), head)
-        self.assertLess(head.find(s1["hook"]["text"]), head.find("第一次去健身房"))
+        self.assertLess(head.find(s1["hook"]["text"]), head.find("减脂先别加练"))
 
     def test_hook_prefix_skipped_for_self_contained_local_topic(self):
         """选题自带本地锚点时，方案钩子口径要主动避让，不叠出两个「别问年卡」。"""
@@ -154,13 +184,37 @@ class TestOfferStructure(unittest.TestCase):
         p0 = llm.template_script(dict(TOPIC), self.cfg)
         ov = llm.template_script(dict(TOPIC), override)
         self.assertEqual(slots(override)["closing"]["origin"], "override")
-        self.assertIn(custom, ov["scenes"][4]["narration"])
+        # 收尾口播是精确拼接：结尾句末的 。 剥掉，再接“，地铁4号线前浯站出来就能到”。
+        # 断言整段拼接原文；caption 里仍保留带句号的原句。
+        splice = custom.rstrip("。") + "，" + self.cfg["local"]["transit"] + "出来就能到"
+        self.assertIn(splice, ov["scenes"][4]["narration"])
+        self.assertTrue(ov["scenes"][4]["narration"].endswith("出来就能到。"))
         self.assertIn(custom, ov["caption"])
         self.assertNotIn(self.cfg["local"]["cta_store"], ov["caption"])
         # 其余三个结构位逐字不动
         for i in (0, 1, 2, 3):
             self.assertEqual(ov["scenes"][i], p0["scenes"][i], f"scene{i+1} 被误改")
         self.assertEqual(ov["scenes"][4]["on_screen"], p0["scenes"][4]["on_screen"])
+
+    def test_closing_narration_exact_equality(self):
+        """GPT 第二次复核第 5 节第 7 项：第 5 镜口播全文等于预期拼接串，
+        不只验子串和结尾。覆盖 P0（TOPIC 命中 H4、SLIM 不命中各一次）、
+        P1 方案结尾、自定义 closing 三条路径。"""
+        for topic in (TOPIC, SLIM_TOPIC):
+            with self.subTest(topic=topic["title"]):
+                s = llm.template_script(dict(topic), self.cfg)
+                self.assertEqual(
+                    s["scenes"][4]["narration"],
+                    expected_closing(s, self.cfg, self.cfg["local"]["cta_store"]))
+        p1cfg = cfg_with(self.cfg, "P1_trial_first")
+        s1 = active_offer(p1cfg)["slots"]
+        p1 = llm.template_script(dict(SLIM_TOPIC), p1cfg)
+        self.assertEqual(p1["scenes"][4]["narration"],
+                         expected_closing(p1, p1cfg, s1["closing"]["text"]))
+        custom = "到店先领一张动线图，自己走一遍再决定。"
+        ov = llm.template_script(dict(TOPIC), cfg_with(self.cfg, closing=custom))
+        self.assertEqual(ov["scenes"][4]["narration"],
+                         expected_closing(ov, self.cfg, custom))
 
     # ---------------------------------------------------------------- 承诺闸门
     def test_unconfirmed_specific_claims_are_blocked_and_fallback(self):
@@ -274,11 +328,45 @@ class TestOfferStructure(unittest.TestCase):
         self.assertEqual(offer_meta(self.off), {})
         s = llm.template_script(dict(TOPIC), self.off)
         before = read_json(BASE / "ab_before.json", {}) or {}
+        if not before:
+            # 作者真实快照不在仓库里时，用随仓的示例快照（由示例配置生成）。
+            before = read_json(ROOT / "tests" / "fixtures" / "ab_before.json", {}) or {}
         self.assertTrue(before)
         self.assertEqual(s["caption"], before["caption"])
         self.assertEqual(s["scenes"][0]["narration"], before["scenes"][0]["narration"])
         self.assertEqual(s["scenes"][4]["narration"], before["scenes"][4]["narration"])
         self.assertFalse(s["offer_audit"]["enabled"])
+
+    def test_p0_fallback_covers_three_missing_offer_configs(self):
+        """GPT 复核 2026-11-10 第 7 项：offer 关闭/缺失时，第 2 镜口播与画面字
+        必须与冻结 P0 快照逐字段一致；覆盖 local 缺失、offer 缺失、enabled=false
+        三种配置。"""
+        p0 = llm.template_script(dict(TOPIC), self.cfg)
+        ref_narration = p0["scenes"][1]["narration"]
+        ref_on_screen = p0["scenes"][1]["on_screen"]
+        # (1) 整个 local 缺失：对照冻结快照 ab_before 的第 2 镜。
+        off = copy.deepcopy(self.cfg)
+        del off["local"]
+        s_off = llm.template_script(dict(TOPIC), off)
+        before = read_json(BASE / "ab_before.json", {}) or {}
+        if not before:
+            before = read_json(ROOT / "tests" / "fixtures" / "ab_before.json", {}) or {}
+        self.assertTrue(before, "缺少改前快照 ab_before.json")
+        self.assertEqual(s_off["scenes"][1]["narration"],
+                         before["scenes"][1]["narration"])
+        self.assertEqual(s_off["scenes"][1]["on_screen"],
+                         before["scenes"][1]["on_screen"])
+        # (2) local 在、offer 键缺失；(3) offer.enabled=false：对照 P0 现行产物。
+        no_offer = copy.deepcopy(self.cfg)
+        no_offer["local"].pop("offer", None)
+        disabled = copy.deepcopy(self.cfg)
+        disabled["local"]["offer"]["enabled"] = False
+        for label, cfg in (("offer 缺失", no_offer), ("offer 关闭", disabled)):
+            with self.subTest(label=label):
+                s = llm.template_script(dict(TOPIC), cfg)
+                self.assertEqual(s["scenes"][1]["narration"], ref_narration)
+                self.assertEqual(s["scenes"][1]["on_screen"], ref_on_screen)
+                self.assertFalse(s["offer_audit"]["enabled"])
 
     def test_disabling_offer_only_falls_back_to_pre_change_copy(self):
         """只删 local.offer（不删整个 local）也必须逐字回到改造前口径。"""

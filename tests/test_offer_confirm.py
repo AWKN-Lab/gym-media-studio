@@ -52,6 +52,20 @@ def flat(script: dict) -> str:
     ])
 
 
+def snapshot_source() -> str:
+    """快照来源：作者真实冻结快照（gitignored，不入库）还是随仓示例快照。
+    两者生成口径不同，测试失败时先看来源再定性（GPT 第二次复核第 3 节）。"""
+    return "author" if (BASE / "ab_before.json").exists() else "example"
+
+
+def snapshot() -> dict:
+    """改前快照：按 snapshot_source() 的来源取（作者真实文件优先，
+    不在仓库里时用随仓的示例快照，由示例配置生成）。"""
+    path = (BASE / "ab_before.json" if snapshot_source() == "author"
+            else ROOT / "tests" / "fixtures" / "ab_before.json")
+    return read_json(path, {}) or {}
+
+
 def p2cfg(cfg: dict) -> dict:
     c = copy.deepcopy(cfg)
     c["local"]["offer"]["active"] = "P2_store_offer"
@@ -216,7 +230,7 @@ class TestOfferConfirmation(unittest.TestCase):
         # 删掉整个 local 才是严格回退，逐字回到 ab_before。
         strict = copy.deepcopy(cfg)
         del strict["local"]
-        before = read_json(BASE / "ab_before.json", {})
+        before = snapshot()
         self.assertEqual(flat(llm.template_script(dict(TOPIC), strict)), flat(before),
                          "删掉 local 后须逐字回到冻结快照")
 
@@ -224,7 +238,11 @@ class TestOfferConfirmation(unittest.TestCase):
     def test_http_route_register_reject_and_state(self):
         from web import server as srv
         tmp_cfg = Path(self.td.name) / "config.json"
-        tmp_cfg.write_bytes((ROOT / "config.json").read_bytes())
+        src_cfg = ROOT / "config.json"
+        if not src_cfg.exists():
+            # 新 clone 还没有 config.json 时，用随仓的示例配置。
+            src_cfg = ROOT / "config.example.json"
+        tmp_cfg.write_bytes(src_cfg.read_bytes())
         # 模拟用户已在界面把当前方案切到 P2；确认接口本身不改 config。
         c = json.loads(tmp_cfg.read_text(encoding="utf-8"))
         c["local"]["offer"]["active"] = "P2_store_offer"
@@ -268,9 +286,17 @@ class TestFrozenFallbackBoundary(unittest.TestCase):
         self.cfg = load_config()
 
     def test_frozen_snapshot_really_contains_the_line(self):
-        before = read_json(BASE / "ab_before.json", {})
+        before = snapshot()
         self.assertIn(FROZEN_LINE, flat(before),
                       "冻结快照若不再含该句，说明回退契约被悄悄改过，须重新核对")
+
+    def test_snapshot_source_matches_file_existence(self):
+        """GPT 第二次复核第 3 节：快照来源必须与文件存在性一致 ——
+        本机无作者真实快照时来源是 example，测试失败先看来源再定性，
+        不把示例快照当成作者冻结快照。"""
+        expected = "author" if (BASE / "ab_before.json").exists() else "example"
+        self.assertEqual(snapshot_source(), expected)
+        self.assertTrue(snapshot(), "快照文件缺失")
 
     def test_frozen_line_never_leaks_into_local_output(self):
         for pid in ("P0_current", "P1_trial_first", "P2_store_offer"):
@@ -286,7 +312,7 @@ class TestFrozenFallbackBoundary(unittest.TestCase):
         off = copy.deepcopy(self.cfg)
         del off["local"]
         s = llm.template_script(dict(TOPIC), off)
-        before = read_json(BASE / "ab_before.json", {})
+        before = snapshot()
         self.assertEqual(flat(s), flat(before))
         self.assertIn(FROZEN_LINE, flat(s))
 

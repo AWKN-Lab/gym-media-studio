@@ -19,6 +19,34 @@ from .util import ROOT, OUTPUT, ffmpeg, run_cmd, ffprobe_duration, write_json, w
 SR = 48000
 
 
+def _gain_envelope(timeline: list[dict], total: float, base_gain: float,
+                   duck_gain: float, step: float = 0.05,
+                   ramp: float = 0.15) -> list[float]:
+    """BGM 让位包络：人声段压到 duck_gain，段间留白回到 base_gain，边界 0.15s 淡入淡出。
+
+    替代原来全程固定低音量。timeline 元素含 start / voice_dur（人声实际时长）。
+    返回每 step 秒一个增益值（供 _build_soundtrack 按采样点查表，避免逐采样算区间）。
+    """
+    n = max(1, int(total / step) + 1)
+    env = [base_gain] * n
+    for seg in timeline:
+        vs = float(seg["start"])
+        ve = vs + float(seg.get("voice_dur", 0) or 0)
+        if ve <= vs:
+            continue
+        for k in range(n):
+            t = k * step
+            if vs - ramp <= t < vs:
+                f = (t - (vs - ramp)) / ramp
+                env[k] = min(env[k], base_gain + (duck_gain - base_gain) * f)
+            elif vs <= t < ve:
+                env[k] = min(env[k], duck_gain)
+            elif ve <= t < ve + ramp:
+                f = (t - ve) / ramp
+                env[k] = min(env[k], duck_gain + (base_gain - duck_gain) * f)
+    return env
+
+
 # ---------------------------------------------------------------- 音频轨
 
 def _wav_frames(path: Path) -> tuple[bytes, int]:
@@ -75,11 +103,16 @@ def _build_soundtrack(voices: list[dict], workdir: Path, cfg: dict) -> tuple[Pat
             kick = math.exp(-phase * 26) * math.sin(2 * math.pi * 62 * t) * 0.45
             hat = math.exp(-phase * 90) * math.sin(2 * math.pi * 7400 * t) * 0.10
             source[i] = int(max(-1.0, min(1.0, (s * env * 0.5 + kick + hat) * 0.5)) * 12000)
-    # 用 ffmpeg 混音更省事：这里直接把 BGM 以低增益叠加到人声
+    # BGM 让位：人声段压低、段间留白恢复，替代原来全程固定低音量。
+    # cfg["video"]["bgm_volume"] 为留白段音量，bgm_duck_volume 为人声段音量。
     gain = cfg["video"].get("bgm_volume", 0.10)
+    duck_gain = cfg["video"].get("bgm_duck_volume", 0.03)
+    envelope = _gain_envelope(timeline, total, gain, duck_gain)
+    step = 0.05
     mixed = array.array("h", [0]) * len(frames)
     for i in range(len(frames)):
-        val = frames[i] + int(source[i] * gain)
+        g = envelope[min(int((i / SR) / step), len(envelope) - 1)]
+        val = frames[i] + int(source[i] * g)
         mixed[i] = max(-32768, min(32767, val))
 
     out = workdir / "soundtrack.wav"
@@ -101,8 +134,12 @@ def _render_clip(img: Path, duration: float, index: int, out: Path,
     common = ["-framerate", str(fps), "-loop", "1", "-t", f"{duration:.3f}", "-i", str(img)]
 
     if cfg["video"].get("ken_burns", True):
-        # zoompan 的 z 用 on（输出帧序号）线性推进，避免表达式内逗号转义
-        z = f"1+0.085*on/{frames}"
+        # zoompan 的 z 用 on（输出帧序号）线性推进，避免表达式内逗号转义。
+        # 推镜方向按分镜奇偶轮换（奇数推进、偶数拉回），避免每镜都是同一个推镜。
+        if index % 2 == 1:
+            z = f"1+0.085*on/{frames}"
+        else:
+            z = f"1.085-0.085*on/{frames}"
         vf = (f"scale={w * 2}:{h * 2}:force_original_aspect_ratio=increase,"
               f"crop={w * 2}:{h * 2},"
               f"zoompan=z='{z}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'"
@@ -143,12 +180,101 @@ def _srt_time(t: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
-def _build_srt(script: dict, timeline: list[dict]) -> str:
+def _split_clauses(text: str, limit: int = 8) -> list[str]:
+    """把口播按标点断成短句，过长的短句再按字数硬切（不断词义、只断长度）。
+
+    字幕逐词卡点的基础：每条不超过 limit 字，念起来一句一卡。
+    """
+    import re as _re
+    parts = [p for p in _re.split(r"[，。！？；、\n]", text) if p.strip()]
+    out: list[str] = []
+    for p in parts:
+        p = p.strip()
+        while len(p) > limit:
+            out.append(p[:limit])
+            p = p[limit:]
+        if p:
+            out.append(p)
+    return out or [text]
+
+
+def _distribute(duration: float, weights: list[float]) -> list[tuple[float, float]]:
+    """按权重把 duration 切成不重叠、不越界的时间段（相对本镜起点）。
+
+    每段至少 0.3 秒（字幕太短看不清），但总时长不够分时下限自动让位、
+    按比例切；最后一段结尾强制等于总时长，消化舍入余量。
+    返回 [(start, end)]，相邻两段首尾相接、末段结尾恒等于 duration。
+    """
+    n = len(weights)
+    if n == 0 or duration <= 0:
+        return []
+    total = sum(weights) or 1.0
+    floor = 0.3 if duration >= 0.3 * n else 0.0
+    raw = [max(floor, duration * w / total) for w in weights]
+    over = sum(raw) - duration
+    if over > 0:
+        # 从超出下限的部分按比例扣回，下限不动
+        slack = [r - floor for r in raw]
+        s = sum(slack) or 1.0
+        raw = [r - over * sl / s for r, sl in zip(raw, slack)]
+    out, cursor = [], 0.0
+    for d in raw[:-1]:
+        out.append((round(cursor, 3), round(cursor + d, 3)))
+        cursor = round(cursor + d, 3)
+    out.append((round(cursor, 3), round(duration, 3)))
+    return out
+
+
+def _word_timings(narration: str, start: float, duration: float,
+                  words: list[dict] | None = None) -> list[tuple[float, float, str]]:
+    """给一句口播算逐词时间轴。
+
+    voices 里若带有真实词级时间戳（words: [{text, start, end}]，相对本镜起点），
+    直接用，但先夹到 [0, duration] 区间内：完全越界的丢弃，越界部分截断，
+    与上一条重叠的起点推到上一条结尾（GPT 第二次复核第 5 节第 3 项）；
+    否则按字数比例估算（faster-whisper 转写时间戳可替换这份估算，
+    见 core/transcribe.py 的 segments）。返回 [(start, end, text)]，
+    所有条目起止都在 [start, start+duration] 内、不重叠、末段结尾恒等于
+    start+duration。
+    """
+    if words:
+        rel = []
+        for w in words:
+            try:
+                ws, we = float(w["start"]), float(w["end"])
+                text = str(w["text"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            ws = max(0.0, min(ws, duration))
+            we = max(0.0, min(we, duration))
+            if we <= ws:
+                continue
+            if rel and ws < rel[-1][1]:
+                ws = rel[-1][1]
+                if we <= ws:
+                    continue
+            rel.append((ws, we, text))
+        if rel:
+            return [(round(start + s, 3), round(start + e, 3), t)
+                    for s, e, t in rel]
+    clauses = _split_clauses(narration)
+    spans = _distribute(duration, [len(c) for c in clauses])
+    return [(round(start + s, 3), round(start + e, 3), c)
+            for (s, e), c in zip(spans, clauses)]
+
+
+def _build_srt(script: dict, timeline: list[dict],
+               voices: list[dict] | None = None) -> str:
+    """逐词字幕：每镜口播按短句切分、按时间轴逐条出字幕，不再整句贴一张。
+
+    仍输出标准 SRT；voices[i] 若带 words 词级时间戳则用真实时间，否则按字数比例估算。
+    """
     parts = []
-    for seg, scene in zip(timeline, script["scenes"]):
-        end = seg["start"] + max(seg["voice_dur"], 0.5)
-        parts.append(f"{len(parts) + 1}\n{_srt_time(seg['start'])} --> {_srt_time(end)}\n"
-                     f"{scene['narration']}\n")
+    for n, (seg, scene) in enumerate(zip(timeline, script["scenes"])):
+        dur = max(seg["voice_dur"], 0.5)
+        words = (voices or [{}] * len(timeline))[n].get("words") if voices else None
+        for s, e, text in _word_timings(scene["narration"], seg["start"], dur, words):
+            parts.append(f"{len(parts) + 1}\n{_srt_time(s)} --> {_srt_time(e)}\n{text}\n")
     return "\n".join(parts)
 
 
@@ -185,12 +311,19 @@ def compose(script: dict, voices: list[dict], images: list[Path], cover: Path,
                  f"{len(timeline)} 个分镜 | {'真实视频 ' + str(len(plan)) + ' 段' if use_real else '无真实素材'}")
 
     clips = []
+    subcuts = bool(cfg["video"].get("subcuts", True))
     for i, (seg, img) in enumerate(zip(timeline, images)):
         d = seg["scene_dur"] + pad
         clip = workdir / f"clip_{seg['index']:02d}.mp4"
         if use_real:
-            from .clips import render_clip
-            render_clip(plan[i], d, overlays[i], clip, cfg, run)
+            from .clips import render_clip, render_clip_segments
+            narration = script["scenes"][i].get("narration", "") if i < len(script["scenes"]) else ""
+            if subcuts and d >= 6:
+                # 每分镜按配音断句切 2~3 小段，段间推镜方向轮换
+                render_clip_segments(plan[i], d, overlays[i], clip, cfg, run,
+                                     narration=narration)
+            else:
+                render_clip(plan[i], d, overlays[i], clip, cfg, run)
         else:
             _render_clip(img, d, seg["index"], clip, workdir, cfg, run)
         clips.append(clip)
@@ -214,7 +347,7 @@ def compose(script: dict, voices: list[dict], images: list[Path], cover: Path,
             str(final)], timeout=300)
 
     srt_path = OUTPUT / f"{stem}.srt"
-    write_text(srt_path, _build_srt(script, timeline))
+    write_text(srt_path, _build_srt(script, timeline, voices))
     cover_out = OUTPUT / f"{stem}_cover.png"
     cover_out.write_bytes(Path(cover).read_bytes())
     meta = {

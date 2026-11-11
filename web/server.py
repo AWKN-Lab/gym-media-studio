@@ -540,6 +540,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(gateway_test(load_config(), body.get("model", "")))
 
             if path == "/api/gateway/set":
+                from core.secrets import save_secrets
                 cfg = load_config()
                 g = cfg.setdefault("llm", {}).setdefault("gateway", {})
                 if "base_url" in body:
@@ -550,10 +551,18 @@ class Handler(BaseHTTPRequestHandler):
                 for k in ("enabled", "model", "prefer_free"):
                     if k in body:
                         g[k] = body[k]
+                # 密钥只进密封存储，绝不写 config.json（H3 闭环）：
+                # config 里只留 base_url / model / enabled 等非秘密字段。
+                legacy = g.pop("api_key", "")
                 if body.get("api_key"):
-                    g["api_key"] = str(body["api_key"]).strip()
-                if body.get("clear_api_key"):
-                    g["api_key"] = ""
+                    save_secrets({"keys": {"GATEWAY_MAGPIE_API_KEY":
+                                           str(body["api_key"]).strip()}})
+                elif body.get("clear_api_key"):
+                    save_secrets({"keys": {"GATEWAY_MAGPIE_API_KEY": "__delete__"}})
+                elif legacy:
+                    # 一次性迁移：旧 config 里的明文 key 搬进密封存储。
+                    save_secrets({"keys": {"GATEWAY_MAGPIE_API_KEY":
+                                           str(legacy).strip()}})
                 save_config(cfg)
                 # 地址/模型变更后旧探测结论立即作废，避免继续用过期缓存
                 (DATA / "gateway_status.json").unlink(missing_ok=True)
